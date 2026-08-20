@@ -2,7 +2,7 @@ _G.CultipConfig = {
     ["Auto Crafting"] = {
         ["Enabled"] = true,             -- Kalau diganti false, script langsung batal jalan!
         ["Craft Interval"] = 0.4,       -- Kecepatan jeda spam remote (detik)
-        ["Max Distance"] = 150,         -- Batas jarak aman cari tungku di plot sendiri
+        ["Max Distance"] = 150,         -- Batas jarak aman cari tungku
         ["Tween Speed"] = 50,           -- Kecepatan geser mulus karakter
     }
 }
