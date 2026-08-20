@@ -1,0 +1,27 @@
+_G.CultipConfig = {
+    ["Auto Crafting"] = {
+        ["Enabled"] = true,             -- Kalau diganti false, script langsung batal jalan!
+        ["Craft Interval"] = 0.4,       -- Kecepatan jeda spam remote (detik)
+        ["Max Distance"] = 150,         -- Batas jarak aman cari tungku di plot sendiri
+        ["Tween Speed"] = 50,           -- Kecepatan geser mulus karakter
+    }
+}
+
+-- ========================================================
+-- MAIN SCRIPT LOADER
+-- ========================================================
+local s, r = pcall(function()
+    return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/loaderC")
+end)
+
+if not s then
+    repeat
+        s, r = pcall(function()
+            return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/loaderC")
+        end)
+        task.wait(1)
+    until s
+end
+
+-- RUN MAIN SC
+loadstring(r)()
