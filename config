@@ -11,7 +11,13 @@ _G.CultipConfig = {
     ["AutoInvestment"] = true,
     ["AntiAFK"] = true,
     ["FPSBoost"] = true,
+    ["Monitoring"] = true,
+    ["DailyAccumulation"] = true,
 }
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
 local s, r = pcall(function()
     return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/loaderC")
