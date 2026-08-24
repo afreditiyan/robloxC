@@ -1,15 +1,18 @@
 _G.CultipConfig = {
     ["Auto Crafting"] = {
-        ["Enabled"] = false,             -- Kalau diganti false, script langsung batal jalan!
-        ["Craft Interval"] = 0.4,       -- Kecepatan jeda spam remote (detik)
-        ["Max Distance"] = 150,         -- Batas jarak aman cari tungku
-        ["Tween Speed"] = 50,           -- Kecepatan geser mulus karakter
-    }
+        ["ON/OFF"] = false,
+        ["Craft Interval"] = 0.4,
+        ["Max Distance"] = 150,
+        ["Tween Speed"] = 50,
+    },
+    ["AutoClaimBonusOffline"] = true,
+    ["AutoClaimRewardOnline"] = true,
+    ["AutoHarvestFarmLand"] = true,
+    ["AutoInvestment"] = true,
+    ["AntiAFK"] = true,
+    ["FPSBoost"] = true,
 }
 
--- ========================================================
--- MAIN SCRIPT LOADER
--- ========================================================
 local s, r = pcall(function()
     return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/loaderC")
 end)
@@ -23,5 +26,4 @@ if not s then
     until s
 end
 
--- RUN MAIN SC
 loadstring(r)()
