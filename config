@@ -1,6 +1,3 @@
--- =========================================================
--- CULTIP CONFIGURATION (config.lua)
--- =========================================================
 _G.CultipConfig = {
     AntiAFK = true,                -- true = Anti-AFK klik layar tiap 5 menit[cite: 1]
     FPSBoost = true,               -- Mengurangi beban grafis multi-akun
@@ -13,7 +10,7 @@ _G.CultipConfig = {
     
     ["Auto Crafting"] = {
         ["ON/OFF"] = true,
-        ["Max Distance"] = 50,
+        ["Max Distance"] = 500,
         ["Tween Speed"] = 16,
         ["Craft Interval"] = 0.3
     }
