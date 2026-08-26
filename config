@@ -1,18 +1,20 @@
+-- =========================================================
+-- CULTIP CONFIGURATION (config.lua) - NO ANTI-AFK
+-- =========================================================
 _G.CultipConfig = {
-    AntiAFK = true,                -- true = Anti-AFK klik layar tiap 5 menit[cite: 1]
-    FPSBoost = true,               -- Mengurangi beban grafis multi-akun
-    AutoClaimRewardOnline = true,  -- Klaim reward online otomatis
-    AutoHarvestFarmLand = true,    -- Auto panen lahan pertanian
-    AutoInvestment = true,         -- Auto klaim & investasi otomatis
-    AutoContributeAndBuyHerb = true, -- true = Nyalakan Auto Kontribusi & Beli Herb, false = Matikan[cite: 1]
-    Monitoring = true,             -- Live Monitoring Webhook
-    DailyAccumulation = true,      -- Akumulasi harian herbs & arsip reset 00:00 WIB
+    FPSBoost = true,                 -- Mengurangi beban grafis multi-akun
+    AutoClaimRewardOnline = true,    -- Klaim reward online otomatis
+    AutoHarvestFarmLand = true,      -- Auto panen lahan pertanian
+    AutoInvestment = true,           -- Auto klaim & investasi otomatis
+    AutoContributeAndBuyHerb = true, -- true = Nyalakan Auto Kontribusi & Beli Herb[cite: 1]
+    Monitoring = true,               -- Live Monitoring Webhook
+    DailyAccumulation = true,        -- Akumulasi harian herbs & arsip reset 00:00 WIB
     
     ["Auto Crafting"] = {
         ["ON/OFF"] = true,
-        ["Max Distance"] = 500,
-        ["Tween Speed"] = 16,
-        ["Craft Interval"] = 0.3
+        ["Max Distance"] = 150,      -- Jangkauan aman pencarian tungku
+        ["Tween Speed"] = 50,        -- Kecepatan gerak karakter ke tungku
+        ["Craft Interval"] = 0.4     -- Interval tembak remote crafting
     }
 }
 
