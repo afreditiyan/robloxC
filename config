@@ -1,6 +1,3 @@
--- =========================================================
--- CULTIP CONFIGURATION (config.lua)
--- =========================================================
 _G.CultipConfig = {
     FPSBoost = true,
     AutoClaimRewardOnline = true,
@@ -15,18 +12,10 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- 1. Loader Skrip Utama (Source)
+-- Loader Skrip Utama (Source)
 task.spawn(function()
     local s, r = pcall(function()
         return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/loaderC")
-    end)
-    if s and r then loadstring(r)() end
-end)
-
--- 2. Loader Skrip Auto Craft (Tinggal ditaruh di sini)
-task.spawn(function()
-    local s, r = pcall(function()
-        return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/autocraft")
     end)
     if s and r then loadstring(r)() end
 end)
