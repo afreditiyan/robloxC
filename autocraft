@@ -10,7 +10,7 @@ end
 -- TOGGLE UTAMA: Atur true (nyala) atau false (mati) di sini
 -- Variabel _G ini aman dan tidak akan rusak walau di-obfuscate
 -- ==========================================================
-_G.AutoCraft_Enabled = true 
+_G.AutoCraft_Enabled = false 
 
 if not _G.AutoCraft_Enabled then
     print("[Cultip AutoCraft] Status: OFF (false). Fitur dihentikan.")
