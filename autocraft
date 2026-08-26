@@ -1,4 +1,4 @@
-local AUTO_CRAFT_ACTIVE = true 
+local AUTO_CRAFT_ACTIVE = false 
 
 if not AUTO_CRAFT_ACTIVE then
     print("[Cultip] Auto Craft dimatikan (false).")
