@@ -1,51 +1,32 @@
 -- =========================================================
--- CULTIP CONFIGURATION (config.lua) - DUAL LOADER SYSTEM
+-- CULTIP CONFIGURATION (config.lua)
 -- =========================================================
 _G.CultipConfig = {
-    FPSBoost = true,                 -- Mengurangi beban grafis multi-akun
-    AutoClaimRewardOnline = true,    -- Klaim reward online otomatis
-    AutoHarvestFarmLand = true,      -- Auto panen lahan pertanian
-    AutoInvestment = true,           -- Auto klaim & investasi otomatis
-    AutoContributeAndBuyHerb = true, -- Auto Kontribusi & Beli Herb[cite: 1]
-    Monitoring = true,               -- Live Monitoring Webhook
-    DailyAccumulation = true,        -- Akumulasi harian herbs & reset 00:00 WIB
-    
-    -- TOGGLE KONTROL UTAMA
-    EnableMainSource = true,         -- true = Jalankan loader utama (monitoring, farm, dll)
-    
-    ["Auto Crafting"] = {
-        ["ON/OFF"] = true,           -- true = Nyalakan Auto Craft, false = Matikan
-        ["Max Distance"] = 150,      -- Jangkauan aman pencarian tungku
-        ["Tween Speed"] = 50,        -- Kecepatan gerak karakter ke tungku
-        ["Craft Interval"] = 0.4     -- Interval tembak remote crafting
-    }
+    FPSBoost = true,
+    AutoClaimRewardOnline = true,
+    AutoHarvestFarmLand = true,
+    AutoInvestment = true,
+    AutoContributeAndBuyHerb = true,
+    Monitoring = true,
+    DailyAccumulation = true,
 }
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- 1. Load Skrip Utama (LoaderC)
-if _G.CultipConfig.EnableMainSource then
-    task.spawn(function()
-        local s, r = pcall(function()
-            return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/loaderC")
-        end)
-        if s and r then
-            loadstring(r)()
-        end
+-- 1. Loader Skrip Utama (Source)
+task.spawn(function()
+    local s, r = pcall(function()
+        return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/loaderC")
     end)
-end
+    if s and r then loadstring(r)() end
+end)
 
--- 2. Load Skrip Auto Craft Terpisah dari link lu (`autocraft`)
-local craftCfg = _G.CultipConfig["Auto Crafting"]
-if craftCfg and craftCfg["ON/OFF"] == true then
-    task.spawn(function()
-        local s, r = pcall(function()
-            return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/autocraft")
-        end)
-        if s and r then
-            loadstring(r)()
-        end
+-- 2. Loader Skrip Auto Craft (Tinggal ditaruh di sini)
+task.spawn(function()
+    local s, r = pcall(function()
+        return game:HttpGet("https://raw.githubusercontent.com/afreditiyan/robloxC/refs/heads/main/autocraft")
     end)
-end
+    if s and r then loadstring(r)() end
+end)
