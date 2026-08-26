@@ -1,0 +1,33 @@
+-- =========================================================
+-- ULTIMATE ANTI-AFK (Gabungan GC Hack + VirtualUser)
+-- =========================================================
+
+-- 1. Lapis Pertama: Hack memory timer game pakai getgc()
+task.spawn(function()
+    pcall(function()
+        if getgc and debug and debug.setupvalue then
+            for _, obj in ipairs(getgc(true)) do
+                if type(obj) == "function" then
+                    local upvalues = debug.getupvalues(obj)
+                    for idx, val in pairs(upvalues) do
+                        if type(val) == "number" and val >= 300 and val <= 1800 then
+                            debug.setupvalue(obj, idx, math.huge)
+                        end
+                    end
+                end
+            end
+            print("[Anti-AFK] Timer internal game berhasil dikunci!")
+        end
+    end)
+end)
+
+-- 2. Lapis Kedua: Skrip VirtualUser bawaan buat pencegah kick 20 menit
+local AntiAFK = game:GetService("VirtualUser")
+
+game.Players.LocalPlayer.Idled:Connect(function()
+    pcall(function()
+        AntiAFK:CaptureController()
+        AntiAFK:ClickButton2(Vector2.new())
+        print("[Anti-AFK] Event Idled 20 menit dicegat!")
+    end)
+end)
