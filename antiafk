@@ -1,90 +1,40 @@
 -- =========================================================
--- ULTIMATE ALL-IN-ONE ANTI-AFK & ANTI-KICK SYSTEM (ROBLOX)
+-- MOBILE DELTA ANTI-AFK (SPECIAL FOR PHONE / TOUCHSCREEN)
 -- =========================================================
 
 local Players = game:GetService("Players")
 local VirtualUser = game:GetService("VirtualUser")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-
 local localPlayer = Players.LocalPlayer
 
-print("[Anti-AFK Master] Mengaktifkan semua metode proteksi Anti-AFK & Anti-Kick...")
-
--- =========================================================
--- METODE 1: CoreGui / Idled Event Bypass (Standar Roblox)
--- =========================================================
+-- 1. Tangkap event idle game supaya tidak ke-kick server
 localPlayer.Idled:Connect(function()
     pcall(function()
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new(0, 0))
     end)
-    print("[Anti-AFK] [Metode 1] Mencegat tendangan idle dari server!")
+    print("[Anti-AFK Mobile] Mencegah idle kick.")
 end)
 
--- =========================================================
--- METODE 2: Window Focus Bypass (Anti-Minimize / Pindah Tab Kick)
--- =========================================================
-pcall(function()
-    UserInputService.WindowFocused:Connect(function()
-        VirtualUser:CaptureController()
-    end)
-end)
-
--- =========================================================
--- METODE 3, 4, & 5: Loop Utama (Kamera, Klik Layar, & Jalan Acak)
--- Berjalan setiap 1 menit (60 detik) dengan jeda random
--- =========================================================
+-- 2. Simulasi tap/sentuh layar HP secara berkala tiap 1 menit
 task.spawn(function()
     while true do
-        -- Jeda waktu acak antara 55 sampai 65 detik (sekitar 1 menit)
-        local randomWait = math.random(55, 65)
-        task.wait(randomWait)
-
+        -- Jeda waktu sekitar 55 sampai 65 detik
+        task.wait(math.random(55, 65))
+        
         pcall(function()
-            -- 1. Jalankan Metode Kamera Mikro (Paling Ampuh)
-            local camera = workspace.CurrentCamera
-            if camera then
-                local currentCF = camera.CFrame
-                camera.CFrame = currentCF * CFrame.Angles(0, math.rad(1), 0)
-                task.wait(0.15)
-                camera.CFrame = currentCF
-                print("[Anti-AFK] [Metode 3] Mikro-kamera digeser halus.")
-            end
-
-            -- 2. Jalankan Metode Virtual Mouse / Screen Tap
-            VirtualUser:Button1Down(Vector2.new(math.random(150, 400), math.random(150, 400)))
-            task.wait(0.1)
-            VirtualUser:Button1Up(Vector2.new(math.random(150, 400), math.random(150, 400)))
-            print("[Anti-AFK] [Metode 4] Sentuhan layar virtual dikirim.")
-
-            -- 3. Jalankan Metode Humanoid Move (Jalan Acak ala Manusia)
-            local character = localPlayer.Character
-            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            local vu = game:GetService("VirtualUser")
             
-            if humanoid and humanoid.Health > 0 then
-                local randomAngle = math.rad(math.random(0, 360))
-                local moveDir = Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle))
-                
-                humanoid:Move(moveDir, true)
-                task.wait(math.random(1, 2)) -- Jalan sebentar 1-2 detik
-                humanoid:Move(Vector3.new(0, 0, 0), true)
-                print("[Anti-AFK] [Metode 5] Karakter melangkah acak natural.")
-            end
+            -- Simulasi ketukan jari di layar HP (posisi random biar aman)
+            local randomX = math.random(100, 400)
+            local randomY = math.random(200, 500)
+            
+            vu:Button1Down(Vector2.new(randomX, randomY))
+            task.wait(0.15)
+            vu:Button1Up(Vector2.new(randomX, randomY))
+            
+            print("[Anti-AFK Mobile] Sentuhan layar virtual dikirim.")
         end)
     end
 end)
 
--- =========================================================
--- PENGAMAN TAMBAHAN: Proteksi Loop Heartbeat
--- =========================================================
-RunService.Heartbeat:Connect(function()
-    -- Memastikan controller tetap tertangkap meskipun character respawn
-    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
-        pcall(function()
-            VirtualUser:CaptureController()
-        end)
-    end
-end)
-
-print("[Anti-AFK Master] BERHASIL AKTIF SEMUA METODE! Aman ditinggal AFK.")
+print("[Anti-AFK Mobile] Berhasil aktif di Delta HP! Aman ditinggal.")
