@@ -1,7 +1,6 @@
 local AUTO_CRAFT_ACTIVE = false 
 
 if not AUTO_CRAFT_ACTIVE then
-    print("[CRAFT] Auto Craft dimatikan (false).")
     return
 end
 
