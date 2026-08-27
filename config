@@ -4,6 +4,8 @@ _G.CultipConfig = {
     AutoHarvestFarmLand = true,
     AutoInvestment = true,
     AutoContributeAndBuyHerb = true,
+    ClaimMail = true,        
+    AutoSpinWheel = true,    
     Monitoring = true,
     DailyAccumulation = true,
 }
