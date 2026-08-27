@@ -1,4 +1,4 @@
-local targetWorld = 2 -- Ganti nomor world tujuan dengan bebas di sini
+local targetWorld = 83 -- Ganti nomor world tujuan dengan bebas di sini
 
 local Whitelist = {
     "XzCor39bGigaFbCryptz", --username or id
