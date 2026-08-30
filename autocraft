@@ -1,6 +1,5 @@
 local autoCraftEnabled = true
 
--- Kalau config dimatikan (false), skrip langsung berhenti
 if not autoCraftEnabled then
     return
 end
