@@ -1,4 +1,4 @@
-local AUTO_CRAFT_ACTIVE = false 
+local AUTO_CRAFT_ACTIVE = true 
 
 if not AUTO_CRAFT_ACTIVE then
     return
