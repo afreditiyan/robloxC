@@ -1,12 +1,12 @@
 -- ================= CONFIGURATION =================
-TARGET_TYPES = "all"            -- "all" untuk trade semua jenis elixir, atau tabel misal {1, 2}
-BLACKLIST_TYPES = {}            -- Tipe yang dikecualikan (kosongkan jika tidak ada)
-TARGET_TRADE_PLAYER = "mainuhuy"-- Nama player target utama[cite: 1]
+TARGET_TYPES = "all"            -- "all" untuk trade semua jenis elixir, atau tabel misal {1, 2}[cite: 4]
+BLACKLIST_TYPES = {}            -- Tipe yang dikecualikan (kosongkan jika tidak ada)[cite: 3, 4]
+TARGET_TRADE_PLAYER = "mainuhuy"-- Nama player target yang akan dikirimi request trade[cite: 1]
 -- =================================================
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
 -- 1. Load Client Pill Manager
 local successManager, clientPillManager = pcall(function()
@@ -29,7 +29,7 @@ local function GetLiveInventory()
     return nil
 end
 
--- 3. Path RemoteEvent
+-- 3. Path RemoteEvent Mass Trade & Request Trade
 local tradeRemote = ReplicatedStorage
     :FindFirstChild("\228\186\139\228\187\182")
     :FindFirstChild("\229\133\172\231\148\168")
@@ -42,24 +42,22 @@ local requestTradeRemote = ReplicatedStorage
     :FindFirstChild("\228\186\164\230\152\147")
     :FindFirstChild("\231\148\179\232\175\183\228\186\164\230\152\147")
 
--- Remote konfirmasi/setuju trade (argumen true)
-local confirmTradeRemote = ReplicatedStorage
-    :FindFirstChild("\228\186\139\228\187\182")
-    :FindFirstChild("\229\133\172\231\148\168")
-    :FindFirstChild("\228\186\164\230\152\147")
-    :FindFirstChild("\233\148\129\229\174\154\228\186\164\230\152\147")
-
--- Fungsi bantu cek tabel
+-- Fungsi bantu cek apakah angka ada di dalam tabel
 local function tableContains(tbl, val)
     for _, v in ipairs(tbl) do
-        if v == val then return true end
+        if v == val then
+            return true
+        end
     end
     return false
 end
 
--- Fungsi validasi utama
+-- Fungsi validasi utama (Target + Blacklist Check)
 local function isAllowedToTrade(val)
-    if tableContains(BLACKLIST_TYPES, val) then return false end
+    if tableContains(BLACKLIST_TYPES, val) then
+        return false
+    end
+
     if type(TARGET_TYPES) == "string" then
         local lowerTarget = string.lower(TARGET_TYPES)
         if lowerTarget == "all" or lowerTarget == "1-5" then
@@ -68,10 +66,11 @@ local function isAllowedToTrade(val)
     elseif type(TARGET_TYPES) == "table" then
         return tableContains(TARGET_TYPES, val)
     end
+    
     return false
 end
 
--- Cek apakah masih ada elixir di tas
+-- Fungsi cek apakah masih ada elixir yang sesuai target di dalam tas
 local function hasElixirInInventory()
     local inventory = GetLiveInventory()
     if not inventory then return false end
@@ -90,11 +89,13 @@ local function ProcessAllItems()
     local inventory = GetLiveInventory()
     if not inventory then
         warn("[AutoTrade] Data tas kosong atau gagal dibaca!")
-        return false
+        return
     end
 
     print("[AutoTrade] Memasukkan semua elixir ke trade...")
+    
     local successCount = 0
+    local skipCount = 0
 
     for i, item in ipairs(inventory) do
         local uuid = item["索引"]
@@ -113,16 +114,18 @@ local function ProcessAllItems()
             end)
             
             successCount = successCount + 1
+            print(string.format("[AutoTrade] Slot [%02d] Dimasukkan -> Type: %d | Quality: %d", i, typeVal, quality))
             task.wait(0.1)
+        else
+            skipCount = skipCount + 1
         end
     end
 
-    print(string.format("[AutoTrade] Selesai! Total dimasukkan: %d item", successCount))
-    return successCount > 0
+    print(string.format("[AutoTrade] Selesai! Berhasil dimasukkan: %d item", successCount))
 end
 
 -- ==========================================
--- 4. OTOMATISASI FULL (REQUEST -> PUT -> CONFIRM)
+-- 4. OTOMATISASI REQUEST TRADE & MASUKKAN ELIXIR
 -- ==========================================
 task.spawn(function()
     task.wait(2)
@@ -133,28 +136,18 @@ task.spawn(function()
         if itemAvailable and requestTradeRemote then
             local targetPlayer = Players:FindFirstChild(TARGET_TRADE_PLAYER)
             if targetPlayer then
-                -- 1. Kirim request trade ke mainuhuy
-                local argsReq = { [1] = targetPlayer }
+                local args = {
+                    [1] = targetPlayer
+                }
+                
                 pcall(function()
-                    requestTradeRemote:FireServer(unpack(argsReq))
+                    requestTradeRemote:FireServer(unpack(args))
                     print("[AutoTrade] Mengirim request trade ke " .. TARGET_TRADE_PLAYER .. "...")
                 end)
                 
-                -- Tunggu sebentar agar menu trade terbuka
-                task.wait(2)
-                
-                -- 2. Masukkan semua elixir
-                local sent = ProcessAllItems()
-                
-                if sent then
-                    -- Beri jeda 1 detik sebelum bot klik tombol setuju (true)
-                    task.wait(1)
-                    pcall(function()
-                        local argsConfirm = { [1] = true }
-                        confirmTradeRemote:FireServer(unpack(argsConfirm))
-                        print("[AutoTrade] Semua item masuk, bot menekan tombol setuju (true)!")
-                    end)
-                end
+                -- Tunggu sebentar agar request trade diterima/terbuka, lalu otomatis masukkan item
+                task.wait(1.5)
+                ProcessAllItems()
             else
                 warn("[AutoTrade] Player '" .. TARGET_TRADE_PLAYER .. "' tidak ditemukan di server!")
             end
@@ -162,6 +155,7 @@ task.spawn(function()
             print("[AutoTrade] Elixir di tas habis. Menunggu...")
         end
         
-        task.wait(6)
+        -- Jeda perulangan berikutnya (total jeda dari request sampai cek ulang)
+        task.wait(5.5)
     end
 end)
