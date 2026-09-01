@@ -1,7 +1,7 @@
 -- ==========================================
 -- [ 1. CONFIG UTAMA - JANGAN DI-OBFUSCATE ]
 -- ==========================================
-local autoCraftEnabled = false -- Ubah jadi false kalau mau dimatikan
+local autoCraftEnabled = true -- Ubah jadi false kalau mau dimatikan
 
 if not autoCraftEnabled then
     print("[Cultip] autoCraftEnabled bernilai FALSE. Skrip dibatalkan.")
