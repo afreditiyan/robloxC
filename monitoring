@@ -39,7 +39,7 @@ else
 end
 
 -- 2. PATH REMOTE EVENTS
-local eventFolder = ReplicatedStorage:WaitForChild("脚本", 15) -- Fallback jika folder utama berbeda, atau tetap pakai string cina:
+local eventFolder = ReplicatedStorage
 pcall(function()
     eventFolder = ReplicatedStorage:WaitForChild("\228\186\139\228\187\182", 5)
         :WaitForChild("\229\133\172\231\148\168", 5)
@@ -52,7 +52,7 @@ local confirmTradeRemote = eventFolder:WaitForChild("\233\148\129\229\174\154\22
 
 print("[AutoTrade] Remote Events berhasil di-link!")
 
--- 3. FUNGSI INVENTORI LIVE
+-- 3. FUNGSI INVENTORI LIVE & VALIDASI
 local function GetLiveInventory()
     local successUp, uvs = pcall(function()
         return debug.getupvalues(clientPillManager["计算可用丹药积分"])
@@ -83,18 +83,21 @@ local function isAllowedToTrade(val)
     return false
 end
 
+-- Cek apakah masih ada elixir di tas (Dengan validasi jumlah item aktif)
 local function hasElixirInInventory()
     local inventory = GetLiveInventory()
-    if not inventory then return false end
+    if not inventory or type(inventory) ~= "table" then return false end
     
+    local countValid = 0
     for _, item in ipairs(inventory) do
         local uuid = item["索引"]
         local typeVal = item["类型"] or 0
         if uuid and isAllowedToTrade(typeVal) then
-            return true
+            countValid = countValid + 1
         end
     end
-    return false
+    
+    return countValid > 0
 end
 
 local function ProcessAllItems()
@@ -128,15 +131,15 @@ local function ProcessAllItems()
     return successCount > 0
 end
 
--- 4. EKSEKUSI UTAMA
+-- 4. EKSEKUSI UTAMA (DENGAN PENGAMAN ANTI-SPAM SAAT KOSONG)
 task.spawn(function()
-    task.wait(3) -- Jeda ekstra setelah karakter berdiri stabil
+    task.wait(3)
     
     while true do
         local itemAvailable = hasElixirInInventory()
         
         if itemAvailable then
-            local targetPlayer = Players:FindFirstChild(TARGET_TRADE_PLAYER)
+            local targetPlayer = Players:FindFirstChild(TARGET_TRADE_PLAYER)[cite: 1]
             
             if targetPlayer then
                 local argsReq = { [1] = targetPlayer }
@@ -160,9 +163,11 @@ task.spawn(function()
                 warn("[AutoTrade] Player '" .. TARGET_TRADE_PLAYER .. "' tidak ditemukan di server!")[cite: 1]
             end
         else
-            print("[AutoTrade] Elixir di tas habis atau belum terbaca. Menunggu...")
+            -- Kalau tas kosong, jeda lebih lama supaya konsol tidak spam
+            print("[AutoTrade] Elixir di tas sudah habis. Bot standby...")
+            task.wait(10)
         end
         
-        task.wait(6)
+        task.wait(2)
     end
 end)
