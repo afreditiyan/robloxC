@@ -1,12 +1,11 @@
 -- ================= CONFIGURATION =================
 TARGET_FPS = 5
-TARGET_MAIN_ACCOUNT = "mainuhuy" -- Akun utama
+TARGET_MAIN_ACCOUNT = "mainuhuy" -- Nama akun utama yang dituju
 -- =================================================
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 if setfpscap then
@@ -23,65 +22,20 @@ if CoreGui:FindFirstChild("CultipFloatingButton") then
 end
 
 -- ==========================================
--- 0. SISTEM AUTO HOP (MAINUHUY = MAX 3 PLAYER, BOT = IKUTI MAINUHUY)
+-- 0. SISTEM AUTO-FOLLOW SERVER MAINUHUY
 -- ==========================================
 task.spawn(function()
     task.wait(5) -- Beri jeda 5 detik saat pertama kali join game
     
-    local function getPublicServers()
-        local servers = {}
-        pcall(function()
-            local cursor = ""
-            repeat
-                local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-                if cursor ~= "" then
-                    url = url .. "&cursor=" .. cursor
-                end
-                local req = HttpService:JSONDecode(game:HttpGet(url))
-                cursor = req.nextPageCursor
-                for _, server in ipairs(req.data) do
-                    if server.id ~= game.JobId then
-                        table.insert(servers, server)
-                    end
-                end
-            until not cursor or #servers > 0
-        end)
-        return servers
-    end
-
     while true do
         local myName = string.lower(LocalPlayer.Name)
         local targetName = string.lower(TARGET_MAIN_ACCOUNT)
         
-        if myName == targetName then
-            -- KONDISI UNTUK MAINUHUY: Cari server yang pemainnya <= 3 orang
-            -- Jika sudah dapat (atau pas baru masuk udah <= 3 orang), dia bakal diam dan stop nge-hop
-            local currentPlayers = #Players:GetPlayers()
-            if currentPlayers > 3 then
-                print("[AutoHop] mainuhuy di server ramai (>3 orang). Mencari server sepi...")
-                local servers = getPublicServers()
-                local targetServer = nil
-                
-                for _, s in ipairs(servers) do
-                    if s.playing and s.playing <= 3 then
-                        targetServer = s
-                        break
-                    end
-                end
-                
-                if targetServer then
-                    TeleportService:TeleportToPlaceInstance(game.PlaceId, targetServer.id, LocalPlayer)
-                else
-                    TeleportService:Teleport(game.PlaceId, LocalPlayer)
-                end
-                task.wait(15)
-            else
-                -- Kalau player di server sudah <= 3, loop dicek tapi tidak akan hop lagi (aman buat bot yg nyusul masuk)
-                task.wait(10)
-            end
-        else
-            -- KONDISI UNTUK AKUN BOT: Cari dan ikuti server tempat mainuhuy berada
+        -- Hanya jalankan jika ini BUKAN akun mainuhuy
+        if myName ~= targetName then
             local foundMain = false
+            
+            -- Cek apakah mainuhuy sudah ada di server yang sama
             for _, p in ipairs(Players:GetPlayers()) do
                 if string.lower(p.Name) == targetName then
                     foundMain = true
@@ -89,17 +43,27 @@ task.spawn(function()
                 end
             end
             
+            -- Jika mainuhuy belum ada, cari UserId-nya lalu teleport langsung ke servernya
             if not foundMain then
-                print("[AutoFind] mainuhuy belum ada di server ini. Mencari server...")
-                local servers = getPublicServers()
-                if #servers > 0 then
-                    local randomServer = servers[math.random(1, #servers)]
-                    TeleportService:TeleportToPlaceInstance(game.PlaceId, randomServer.id, LocalPlayer)
+                print("[AutoJoin] mainuhuy belum ada di server ini. Melacak server...")
+                local success, userId = pcall(function()
+                    return Players:GetUserIdFromNameAsync(TARGET_MAIN_ACCOUNT)
+                end)
+                
+                if success and userId then
+                    print("[AutoJoin] Bertemu target! Melompat ke server mainuhuy...")
+                    pcall(function()
+                        TeleportService:TeleportToUserId(game.PlaceId, userId)
+                    end)
                 else
-                    TeleportService:Teleport(game.PlaceId, LocalPlayer)
+                    warn("[AutoJoin] Gagal mendeteksi UserId mainuhuy, mencoba ulang...")
                 end
+                
                 task.wait(15)
             end
+        else
+            -- Jika ini akun mainuhuy, tidak usah nge-hop
+            break
         end
         
         task.wait(10)
