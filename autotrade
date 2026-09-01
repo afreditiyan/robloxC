@@ -1,23 +1,29 @@
 -- ================= CONFIGURATION =================
 TARGET_TYPES = "all"            -- "all" untuk trade semua jenis elixir, atau tabel misal {1, 2}
 BLACKLIST_TYPES = {}            -- Tipe yang dikecualikan (kosongkan jika tidak ada)
-TARGET_TRADE_PLAYER = "mainuhuy"-- Nama player target utama[cite: 1]
+TARGET_TRADE_PLAYER = "mainuhuy"-- Nama player target utama
 -- =================================================
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
 if not game:IsLoaded() then 
     repeat task.wait(1) until game:IsLoaded() 
 end
 
--- 1. Load Client Pill Manager dengan sistem pengulangan (Anti-Gagal di awal load)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+print("[AutoTrade] Menunggu data game termuat (Mode Auto-Execute)...")
+
+-- 1. TUNGGU MODULE PATH (WAJIB BUAT AUTO EXECUTE)
+local pillManagerModule = ReplicatedStorage:WaitForChild("脚本模块", 999)
+    :WaitForChild("客户端", 999)
+    :WaitForChild("工具", 999)
+    :WaitForChild("客户端丹药管理器", 999)
+
 local clientPillManager = nil
-print("[AutoTrade] Menghubungkan ke Client Pill Manager...")
 repeat
     local successManager, result = pcall(function()
-        return require(ReplicatedStorage["脚本模块"]["客户端"]["工具"]["客户端丹药管理器"])
+        return require(pillManagerModule)
     end)
     if successManager and result then
         clientPillManager = result
@@ -27,7 +33,18 @@ repeat
     end
 until clientPillManager
 
--- 2. Fungsi ambil inventori secara live
+-- 2. TUNGGU REMOTE EVENTS PATH (WAJIB BUAT AUTO EXECUTE)
+local eventFolder = ReplicatedStorage:WaitForChild("\228\186\139\228\187\182", 999)
+    :WaitForChild("\229\133\172\231\148\168", 999)
+    :WaitForChild("\228\186\164\230\152\147", 999)
+
+local tradeRemote = eventFolder:WaitForChild("\230\150\176\229\162\158\228\186\164\230\152\147\231\137\169\229\147\129", 999)
+local requestTradeRemote = eventFolder:WaitForChild("\231\148\179\232\175\183\228\186\164\230\152\147", 999)
+local confirmTradeRemote = eventFolder:WaitForChild("\233\148\129\229\174\154\228\186\164\230\152\147", 999)
+
+print("[AutoTrade] Semua Remote Event siap!")
+
+-- 3. Fungsi ambil inventori secara live
 local function GetLiveInventory()
     local successUp, uvs = pcall(function()
         return debug.getupvalues(clientPillManager["计算可用丹药积分"])
@@ -37,26 +54,6 @@ local function GetLiveInventory()
     end
     return nil
 end
-
--- 3. Path RemoteEvent
-local tradeRemote = ReplicatedStorage
-    :FindFirstChild("\228\186\139\228\187\182")
-    :FindFirstChild("\229\133\172\231\148\168")
-    :FindFirstChild("\228\186\164\230\152\147")
-    :FindFirstChild("\230\150\176\229\162\158\228\186\164\230\152\147\231\137\169\229\147\129")
-
-local requestTradeRemote = ReplicatedStorage
-    :FindFirstChild("\228\186\139\228\187\182")
-    :FindFirstChild("\229\133\172\231\148\168")
-    :FindFirstChild("\228\186\164\230\152\147")
-    :FindFirstChild("\231\148\179\232\175\183\228\186\164\230\152\147")
-
--- Remote konfirmasi/setuju trade (argumen true)
-local confirmTradeRemote = ReplicatedStorage
-    :FindFirstChild("\228\186\139\228\187\182")
-    :FindFirstChild("\229\133\172\231\148\168")
-    :FindFirstChild("\228\186\164\230\152\147")
-    :FindFirstChild("\233\148\129\229\174\154\228\186\164\230\152\147")
 
 -- Fungsi bantu cek tabel
 local function tableContains(tbl, val)
@@ -97,10 +94,7 @@ end
 
 local function ProcessAllItems()
     local inventory = GetLiveInventory()
-    if not inventory then
-        warn("[AutoTrade] Data tas kosong atau gagal dibaca!")
-        return false
-    end
+    if not inventory then return false end
 
     print("[AutoTrade] Memasukkan semua elixir ke trade...")
     local successCount = 0
@@ -110,7 +104,7 @@ local function ProcessAllItems()
         local typeVal = item["类型"] or 0
         local quality = item["品质"] or 0
         
-        if uuid and isAllowedToTrade(typeVal) and tradeRemote then
+        if uuid and isAllowedToTrade(typeVal) then
             local args = {
                 [1] = "\228\184\185\232\141\175",
                 [2] = uuid,
@@ -134,13 +128,14 @@ end
 -- 4. OTOMATISASI FULL (REQUEST -> PUT -> CONFIRM)
 -- ==========================================
 task.spawn(function()
-    task.wait(3)
+    task.wait(5) -- Beri ekstra jeda 5 detik agar karakter spawn sempurna sebelum mulai trade
     
     while true do
         local itemAvailable = hasElixirInInventory()
         
-        if itemAvailable and requestTradeRemote then
+        if itemAvailable then
             local targetPlayer = Players:FindFirstChild(TARGET_TRADE_PLAYER)
+            
             if targetPlayer then
                 -- 1. Kirim request trade ke mainuhuy
                 local argsReq = { [1] = targetPlayer }
@@ -165,7 +160,7 @@ task.spawn(function()
                     end)
                 end
             else
-                warn("[AutoTrade] Player '" .. TARGET_TRADE_PLAYER .. "' tidak ditemukan di server!")
+                warn("[AutoTrade] Player '" .. TARGET_TRADE_PLAYER .. "' tidak ditemukan di server! Menunggu...")
             end
         else
             print("[AutoTrade] Elixir di tas habis. Menunggu...")
