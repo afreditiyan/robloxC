@@ -1,4 +1,4 @@
-TARGET_TYPES = {all} -- all or "1-5", atau {1, 2, 3, 4, 5}
+TARGET_TYPES = "all" -- "all" or "1-5", atau {1, 2, 3, 4, 5}
 BLACKLIST_TYPES = {} -- ga akan di trade
 
 -- Referensi Tipe:
