@@ -1,7 +1,6 @@
--- ================= CONFIGURATION =================
+-- Langsung buat global config (tanpa kata 'local')
 TARGET_FPS = 5
-TARGET_MAIN_ACCOUNT = "mainuhuy" -- Nama akun utama
--- =================================================
+TARGET_MAIN_ACCOUNT = "mainuhuy" -- Akun utama yang dicari agar bisa 1 server
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -23,17 +22,16 @@ if CoreGui:FindFirstChild("CultipFloatingButton") then
 end
 
 -- ==========================================
--- 0. SISTEM AUTO SERVER HOP STANDAR (STABIL)
+-- 0. SISTEM AUTO JOIN / CARI SERVER MAINUHUY
 -- ==========================================
 task.spawn(function()
-    task.wait(5) -- Tunggu sebentar pas masuk game pertama kali
+    task.wait(5) -- Beri jeda 5 detik saat pertama kali join game
     
-    local function standardHop()
-        local success, err = pcall(function()
+    local function hopToMainServer()
+        pcall(function()
             local servers = {}
             local cursor = ""
             
-            -- Ambil list server publik game via HttpService Roblox (Lebih aman jika pakai request internal / tempat lain)
             repeat
                 local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
                 if cursor ~= "" then
@@ -49,51 +47,40 @@ task.spawn(function()
             until not cursor or #servers > 0
             
             if #servers > 0 then
-                -- Pilih server acak dari list
                 local targetServer = servers[math.random(1, #servers)]
                 TeleportService:TeleportToPlaceInstance(game.PlaceId, targetServer.id, LocalPlayer)
             else
-                -- Kalau gak ketemu, teleport ulang biasa
                 TeleportService:Teleport(game.PlaceId, LocalPlayer)
             end
         end)
-        
-        if not success then
-            -- Fallback jika API gagal: Rejoin / Teleport standar
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
-        end
     end
 
+    -- Cek berkala: Jika bukan akun mainuhuy, pastikan mainuhuy ada di server yang sama
     while true do
         local myName = string.lower(LocalPlayer.Name)
         local targetName = string.lower(TARGET_MAIN_ACCOUNT)
         
         if myName ~= targetName then
-            -- KONDISI BUKAN MAINUHUY: Cek apakah mainuhuy ada di server ini
-            local found = false
+            local foundMain = false
             for _, p in ipairs(Players:GetPlayers()) do
                 if string.lower(p.Name) == targetName then
-                    found = true
+                    foundMain = true
                     break
                 end
             end
             
-            -- Kalau mainuhuy TIDAK ADA di server ini, langsung pindah (hop) cari server lain
-            if not found then
-                print("[AutoHop] mainuhuy tidak ditemukan di server ini. Mencari server lain...")
-                standardHop()
+            -- Jika mainuhuy tidak ada di server ini, cari server lain
+            if not foundMain then
+                print("[AutoFind] mainuhuy belum ada di server ini. Mencari server...")
+                hopToMainServer()
                 task.wait(10)
             end
         else
-            -- KONDISI AKUN UTAMA (MAINUHUY): Cari server sepi (misal total player di server <= 2 orang)
-            if #Players:GetPlayers() > 2 then
-                print("[AutoHop] Server terlalu ramai untuk mainuhuy. Mencari server sepi...")
-                standardHop()
-                task.wait(10)
-            end
+            -- Jika ini akun mainuhuy, diam saja di servernya
+            break
         end
         
-        task.wait(10) -- Cek berkala setiap 10 detik
+        task.wait(10)
     end
 end)
 
