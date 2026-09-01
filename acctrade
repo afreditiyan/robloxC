@@ -1,0 +1,57 @@
+-- =========================================================
+-- AUTO ACCEPT & CONFIRM TRADE - MAINUHUY ONLY
+-- =========================================================
+
+if not game:IsLoaded() then 
+    repeat task.wait(1) until game:IsLoaded() 
+end
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- KONFIGURASI NAMA AKUN UTAMA
+local TARGET_MAIN_ACCOUNT = "mainuhuy"
+
+-- Cek apakah yang menjalankan skrip ini benar-benar mainuhuy
+if string.lower(LocalPlayer.Name) ~= string.lower(TARGET_MAIN_ACCOUNT) then
+    warn("[Security] Skrip ini khusus untuk akun " .. TARGET_MAIN_ACCOUNT .. "! Skrip dihentikan.")
+    return
+end
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Remote untuk konfirmasi / setuju trade (argumen true)
+local confirmTradeRemote = ReplicatedStorage:WaitForChild("\228\186\139\228\187\182")
+                           :WaitForChild("\229\133\172\231\148\168")
+                           :WaitForChild("\228\186\164\230\152\147")
+                           :WaitForChild("\233\148\129\229\174\154\228\186\164\230\152\147")
+
+-- Remote untuk terima undangan awal trade
+local requestAcceptRemote = ReplicatedStorage:WaitForChild("\228\186\139\228\187\182")
+                            :WaitForChild("\229\133\172\231\148\168")
+                            :WaitForChild("\228\186\164\230\152\147")
+                            :WaitForChild("\231\148\179\232\175\183\228\186\164\230\152\147")
+
+_G.MainAccept = true
+
+task.spawn(function()
+    print("[Mainuhuy] Sistem Auto-Accept & Confirm Trade Aktif (Locked to Main Account)...")
+    while _G.MainAccept do
+        pcall(function()
+            -- 1. Terima undangan trade awal
+            requestAcceptRemote:FireServer()
+            
+            -- 2. Beri jeda 5 detik untuk memastikan semua elixir dari bot masuk
+            task.wait(5)
+            
+            -- 3. Eksekusi konfirmasi setuju trade dengan argumen true
+            local args = {
+                [1] = true
+            }
+            confirmTradeRemote:FireServer(unpack(args))
+            print("[Mainuhuy] Trade disetujui setelah jeda 5 detik!")
+        end)
+        
+        task.wait(2) -- Jeda antar loop pengecekan trade berikutnya
+    end
+end)
