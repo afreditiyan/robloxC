@@ -1,7 +1,7 @@
 -- ================= CONFIGURATION =================
-TARGET_TYPES = "all"            -- "all" untuk trade semua jenis elixir, atau tabel misal {1, 2}
-BLACKLIST_TYPES = {}            -- Tipe yang dikecualikan (kosongkan jika tidak ada)
-TARGET_TRADE_PLAYER = "mainuhuy"-- Nama player target utama
+TARGET_TYPES = "all"            -- "all" untuk trade semua jenis elixir
+BLACKLIST_TYPES = {}            
+TARGET_TRADE_PLAYER = "mainuhuy"-- Nama akun utama
 -- =================================================
 
 if not game:IsLoaded() then 
@@ -12,10 +12,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-print("[AutoTrade] Menunggu data game termuat (Mode Auto-Execute)...")
+print("[AutoBot] Menunggu modul game termuat...")
 
--- 1. TUNGGU MODULE PATH (WAJIB BUAT AUTO EXECUTE)
-local pillManagerModule = ReplicatedStorage:WaitForChild("脚本模块", 999)
+-- 1. Load Client Pill Manager aman untuk Auto-Execute
+local pillModule = ReplicatedStorage:WaitForChild("脚本模块", 999)
     :WaitForChild("客户端", 999)
     :WaitForChild("工具", 999)
     :WaitForChild("客户端丹药管理器", 999)
@@ -23,17 +23,17 @@ local pillManagerModule = ReplicatedStorage:WaitForChild("脚本模块", 999)
 local clientPillManager = nil
 repeat
     local successManager, result = pcall(function()
-        return require(pillManagerModule)
+        return require(pillModule)
     end)
     if successManager and result then
         clientPillManager = result
-        print("[AutoTrade] Client Pill Manager berhasil dimuat!")
+        print("[AutoBot] Client Pill Manager siap!")
     else
         task.wait(1)
     end
 until clientPillManager
 
--- 2. TUNGGU REMOTE EVENTS PATH (WAJIB BUAT AUTO EXECUTE)
+-- 2. Path Remote Events
 local eventFolder = ReplicatedStorage:WaitForChild("\228\186\139\228\187\182", 999)
     :WaitForChild("\229\133\172\231\148\168", 999)
     :WaitForChild("\228\186\164\230\152\147", 999)
@@ -42,9 +42,7 @@ local tradeRemote = eventFolder:WaitForChild("\230\150\176\229\162\158\228\186\1
 local requestTradeRemote = eventFolder:WaitForChild("\231\148\179\232\175\183\228\186\164\230\152\147", 999)
 local confirmTradeRemote = eventFolder:WaitForChild("\233\148\129\229\174\154\228\186\164\230\152\147", 999)
 
-print("[AutoTrade] Semua Remote Event siap!")
-
--- 3. Fungsi ambil inventori secara live
+-- 3. Live Scan Inventori Tas
 local function GetLiveInventory()
     local successUp, uvs = pcall(function()
         return debug.getupvalues(clientPillManager["计算可用丹药积分"])
@@ -55,7 +53,6 @@ local function GetLiveInventory()
     return nil
 end
 
--- Fungsi bantu cek tabel
 local function tableContains(tbl, val)
     for _, v in ipairs(tbl) do
         if v == val then return true end
@@ -63,7 +60,6 @@ local function tableContains(tbl, val)
     return false
 end
 
--- Fungsi validasi utama
 local function isAllowedToTrade(val)
     if tableContains(BLACKLIST_TYPES, val) then return false end
     if type(TARGET_TYPES) == "string" then
@@ -71,38 +67,36 @@ local function isAllowedToTrade(val)
         if lowerTarget == "all" or lowerTarget == "1-5" then
             return val >= 1 and val <= 5
         end
-    elseif type(TARGET_TYPES) == "table" then
-        return tableContains(TARGET_TYPES, val)
     end
     return false
 end
 
--- Cek apakah masih ada elixir di tas
+-- Cek apakah masih ada elixir valid di tas
 local function hasElixirInInventory()
     local inventory = GetLiveInventory()
     if not inventory then return false end
     
+    local count = 0
     for _, item in ipairs(inventory) do
         local uuid = item["索引"]
         local typeVal = item["类型"] or 0
         if uuid and isAllowedToTrade(typeVal) then
-            return true
+            count = count + 1
         end
     end
-    return false
+    return count > 0
 end
 
 local function ProcessAllItems()
     local inventory = GetLiveInventory()
     if not inventory then return false end
 
-    print("[AutoTrade] Memasukkan semua elixir ke trade...")
+    print("[AutoBot] Memasukkan semua elixir ke trade...")
     local successCount = 0
 
-    for i, item in ipairs(inventory) do
+    for _, item in ipairs(inventory) do
         local uuid = item["索引"]
         local typeVal = item["类型"] or 0
-        local quality = item["品质"] or 0
         
         if uuid and isAllowedToTrade(typeVal) then
             local args = {
@@ -110,62 +104,50 @@ local function ProcessAllItems()
                 [2] = uuid,
                 [3] = 99999
             }
-            
             pcall(function()
                 tradeRemote:FireServer(unpack(args))
             end)
-            
             successCount = successCount + 1
-            task.wait(0.1)
+            task.wait(0.05)
         end
     end
 
-    print(string.format("[AutoTrade] Selesai! Total dimasukkan: %d item", successCount))
     return successCount > 0
 end
 
--- ==========================================
--- 4. OTOMATISASI FULL (REQUEST -> PUT -> CONFIRM)
--- ==========================================
+-- 4. Loop Utama Bot (Spam request selama masih ada elixir)
 task.spawn(function()
-    task.wait(5) -- Beri ekstra jeda 5 detik agar karakter spawn sempurna sebelum mulai trade
+    task.wait(5)
     
     while true do
-        local itemAvailable = hasElixirInInventory()
-        
-        if itemAvailable then
+        if hasElixirInInventory() then
             local targetPlayer = Players:FindFirstChild(TARGET_TRADE_PLAYER)
             
             if targetPlayer then
-                -- 1. Kirim request trade ke mainuhuy
-                local argsReq = { [1] = targetPlayer }
+                -- Spam request trade ke mainuhuy
                 pcall(function()
-                    requestTradeRemote:FireServer(unpack(argsReq))
-                    print("[AutoTrade] Mengirim request trade ke " .. TARGET_TRADE_PLAYER .. "...")
+                    requestTradeRemote:FireServer(targetPlayer)
+                    print("[AutoBot] Mengirim request trade ke " .. TARGET_TRADE_PLAYER .. "...")
                 end)
                 
-                -- Tunggu sebentar agar menu trade terbuka
                 task.wait(2)
-                
-                -- 2. Masukkan semua elixir
                 local sent = ProcessAllItems()
                 
                 if sent then
-                    -- Beri jeda 1 detik sebelum bot menekan tombol setuju (true)
                     task.wait(1)
                     pcall(function()
-                        local argsConfirm = { [1] = true }
-                        confirmTradeRemote:FireServer(unpack(argsConfirm))
-                        print("[AutoTrade] Semua item masuk, bot menekan tombol setuju (true)!")
+                        confirmTradeRemote:FireServer(true)
+                        print("[AutoBot] Item masuk, bot mengonfirmasi setuju (true)!")
                     end)
                 end
             else
-                warn("[AutoTrade] Player '" .. TARGET_TRADE_PLAYER .. "' tidak ditemukan di server! Menunggu...")
+                warn("[AutoBot] Player " .. TARGET_TRADE_PLAYER .. " tidak ditemukan di server!")
             end
         else
-            print("[AutoTrade] Elixir di tas habis. Menunggu...")
+            print("[AutoBot] Elixir di tas sudah habis. Bot standby...")
+            task.wait(10)
         end
         
-        task.wait(6)
+        task.wait(3)
     end
 end)
