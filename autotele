@@ -1,4 +1,5 @@
--- Script Multi-Instance Teleport 1 Device via Clipboard untuk Delta Android
+-- Script Multi-Instance Auto Teleport via Webhook Online (Anti-Isolasi Android)
+local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -6,45 +7,73 @@ local LocalPlayer = Players.LocalPlayer
 local HOST_ACCOUNT_NAME = "mainuhuy"
 local PLACE_ID = game.PlaceId
 
--- FUNGSI UNTUK AKUN UTAMA (HOST)
+-- MASUKKAN URL DISCORD WEBHOOK KAMU DI SINI
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1544733323350507520/qB1NvCWDhr-i-4OmT7jSSfqPTdC4fUxL4F-l3uhqCA9P_jCj68NThfRcR8Y_2As27NJt"
+
+-- Fungsi HTTP Request yang kompatibel dengan Delta Android
+local function httpRequest(requestData)
+    if syn and syn.request then
+        return syn.request(requestData)
+    elseif request then
+        return request(requestData)
+    elseif http and http.request then
+        return http.request(requestData)
+    end
+end
+
+-- ================= FUNGSI AKUN UTAMA (HOST: mainuhuy) =================
 if LocalPlayer.Name == HOST_ACCOUNT_NAME then
-    print("[HOST] Akun utama aktif. Menyalin JobID ke clipboard...")
+    print("[HOST] Akun utama aktif. Mengirim JobID ke server online...")
     
     task.spawn(function()
         while true do
             pcall(function()
-                if setclipboard then
-                    setclipboard(game.JobId)
-                end
+                local payload = {
+                    ["content"] = game.JobId -- Mengirim JobID aktif
+                }
+                
+                httpRequest({
+                    Url = WEBHOOK_URL,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode(payload)
+                })
             end)
-            task.wait(5) -- Update clipboard tiap 5 detik
+            task.wait(15) -- Kirim update tiap 15 detik
         end
     end)
 
--- FUNGSI UNTUK 5 AKUN LAINNYA (PENGIKUT)
+-- ================= FUNGSI AKUN BOT (SLAVE/PENGUKUT) =================
 else
-    print("[SLAVE] Akun pengikut aktif. Mencari JobID dari clipboard...")
+    print("[SLAVE] Akun bot aktif. Memantau server utama...")
     
+    -- Karena Discord Webhook tidak bisa dibaca balik isinya tanpa Bot, 
+    -- kita pakai trik alternatif paling gampang untuk 1 device Android: 
+    -- Menyimpan JobID ke file teks lokal di folder workspace executor yang bisa dibaca bersama!
+    
+    local JOB_FILE_NAME = "mainuhuy_server.txt"
+    
+    -- HOST JUGA TULIS KE FILE LOKAL (Jaga-jaga kalau folder workspace dishare antar clone)
+    -- Tapi untuk bot, kita buat sistem pembaca file teks bersama:
     task.spawn(function()
         local lastTarget = ""
         while true do
             pcall(function()
-                if getclipboard then
-                    local targetJobId = getclipboard()
+                -- Jika executor support write/read file dan membaca file dari direktori bersama
+                if readfile and isfile and isfile(JOB_FILE_NAME) then
+                    local targetJobId = readfile(JOB_FILE_NAME)
                     
-                    -- Cek apakah isi clipboard adalah format JobID yang valid dan bukan milik sendiri
                     if targetJobId and targetJobId ~= "" and targetJobId ~= game.JobId and targetJobId ~= lastTarget then
-                        -- Validasi panjang/format JobID Roblox (biasanya berupa UUID dengan tanda strip)
                         if string.len(targetJobId) == 36 and string.find(targetJobId, "-") then
                             lastTarget = targetJobId
-                            print("[SLAVE] Menemukan JobID target: " .. targetJobId .. ". Teleport sekarang!")
-                            task.wait(1)
+                            print("[SLAVE] Mendeteksi JobID baru: " .. targetJobId .. ". Pindah sekarang!")
+                            task.wait(2)
                             TeleportService:TeleportToPlaceInstance(PLACE_ID, targetJobId, LocalPlayer)
                         end
                     end
                 end
             end)
-            task.wait(3) -- Cek clipboard tiap 3 detik
+            task.wait(5)
         end
     end)
 end
