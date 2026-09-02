@@ -1,5 +1,5 @@
 -- =========================================================
--- AUTO ACCEPT & CONFIRM TRADE - MAINUHUY ONLY
+-- AUTO ACCEPT, CONFIRM & AUTO CLICK OK - MAINUHUY ONLY
 -- =========================================================
 
 if not game:IsLoaded() then 
@@ -8,6 +8,7 @@ end
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- KONFIGURASI NAMA AKUN UTAMA
 local TARGET_MAIN_ACCOUNT = "mainuhuy"
@@ -34,8 +35,57 @@ local requestAcceptRemote = ReplicatedStorage:WaitForChild("\228\186\139\228\187
 
 _G.MainAccept = true
 
+-- ==========================================
+-- FITUR TAMBAHAN: AUTO CLICK OK POPUP TRADE SUCCESSFUL
+-- ==========================================
 task.spawn(function()
-    print("[Mainuhuy] Sistem Auto-Accept & Confirm Trade Aktif (Locked to Main Account)...")
+    print("[Mainuhuy] Monitor Auto-Click OK Trade Successful Aktif...")
+    while _G.MainAccept do
+        task.wait(0.5)
+        
+        pcall(function()
+            -- Scan semua elemen GUI di layar player
+            for _, gui in ipairs(PlayerGui:GetDescendants()) do
+                if gui:IsA("TextLabel") or gui:IsA("TextButton") then
+                    local textUpper = string.upper(gui.Text or "")
+                    
+                    -- Cek apakah teks pop-up sukses trade muncul
+                    if string.find(textUpper, "TRADE SUCCESSFUL") then
+                        local parentObj = gui.Parent
+                        
+                        -- Cari tombol OK di sekitar elemen pop-up tersebut
+                        for i = 1, 3 do
+                            if parentObj then
+                                for _, btn in ipairs(parentObj:GetDescendants()) do
+                                    if btn:IsA("TextButton") and string.upper(btn.Text or "") == "OK" then
+                                        print("[Mainuhuy] Pop-up Trade Successful terdeteksi! Mengklik OK...")
+                                        
+                                        -- Eksekusi klik tombol OK secara otomatis menggunakan getconnections
+                                        for _, conn in ipairs(getconnections(btn.MouseButton1Click)) do
+                                            conn:Fire()
+                                        end
+                                        for _, conn in ipairs(getconnections(btn.Activated)) do
+                                            conn:Fire()
+                                        end
+                                        
+                                        task.wait(2) -- Jeda agar pop-up sempat tertutup rapi
+                                    end
+                                end
+                                parentObj = parentObj.Parent
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ==========================================
+-- LOOP UTAMA: AUTO ACCEPT & CONFIRM TRADE
+-- ==========================================
+task.spawn(function()
+    print("[Mainuhuy] Sistem Auto-Accept & Confirm Trade Aktif...")
     while _G.MainAccept do
         pcall(function()
             -- 1. Terima undangan trade awal
