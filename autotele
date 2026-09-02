@@ -1,0 +1,50 @@
+-- Script Multi-Instance Teleport 1 Device via Clipboard untuk Delta Android
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local HOST_ACCOUNT_NAME = "mainuhuy"
+local PLACE_ID = game.PlaceId
+
+-- FUNGSI UNTUK AKUN UTAMA (HOST)
+if LocalPlayer.Name == HOST_ACCOUNT_NAME then
+    print("[HOST] Akun utama aktif. Menyalin JobID ke clipboard...")
+    
+    task.spawn(function()
+        while true do
+            pcall(function()
+                if setclipboard then
+                    setclipboard(game.JobId)
+                end
+            end)
+            task.wait(5) -- Update clipboard tiap 5 detik
+        end
+    end)
+
+-- FUNGSI UNTUK 5 AKUN LAINNYA (PENGIKUT)
+else
+    print("[SLAVE] Akun pengikut aktif. Mencari JobID dari clipboard...")
+    
+    task.spawn(function()
+        local lastTarget = ""
+        while true do
+            pcall(function()
+                if getclipboard then
+                    local targetJobId = getclipboard()
+                    
+                    -- Cek apakah isi clipboard adalah format JobID yang valid dan bukan milik sendiri
+                    if targetJobId and targetJobId ~= "" and targetJobId ~= game.JobId and targetJobId ~= lastTarget then
+                        -- Validasi panjang/format JobID Roblox (biasanya berupa UUID dengan tanda strip)
+                        if string.len(targetJobId) == 36 and string.find(targetJobId, "-") then
+                            lastTarget = targetJobId
+                            print("[SLAVE] Menemukan JobID target: " .. targetJobId .. ". Teleport sekarang!")
+                            task.wait(1)
+                            TeleportService:TeleportToPlaceInstance(PLACE_ID, targetJobId, LocalPlayer)
+                        end
+                    end
+                end
+            end)
+            task.wait(3) -- Cek clipboard tiap 3 detik
+        end
+    end)
+end
