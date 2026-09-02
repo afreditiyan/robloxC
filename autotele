@@ -1,4 +1,4 @@
--- Script Multi-Instance Auto Teleport via Webhook Online (Anti-Isolasi Android)
+-- Script Multi-Instance Auto Teleport 1 Device (Fixed File & Webhook)
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
@@ -6,11 +6,10 @@ local LocalPlayer = Players.LocalPlayer
 
 local HOST_ACCOUNT_NAME = "mainuhuy"
 local PLACE_ID = game.PlaceId
-
--- MASUKKAN URL DISCORD WEBHOOK KAMU DI SINI
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1544733323350507520/qB1NvCWDhr-i-4OmT7jSSfqPTdC4fUxL4F-l3uhqCA9P_jCj68NThfRcR8Y_2As27NJt"
+local JOB_FILE_NAME = "mainuhuy_server.txt"
 
--- Fungsi HTTP Request yang kompatibel dengan Delta Android
+-- Fungsi HTTP Request kompatibel dengan Delta Android
 local function httpRequest(requestData)
     if syn and syn.request then
         return syn.request(requestData)
@@ -23,13 +22,19 @@ end
 
 -- ================= FUNGSI AKUN UTAMA (HOST: mainuhuy) =================
 if LocalPlayer.Name == HOST_ACCOUNT_NAME then
-    print("[HOST] Akun utama aktif. Mengirim JobID ke server online...")
+    print("[HOST] Akun utama aktif. Menyimpan JobID ke file & webhook...")
     
     task.spawn(function()
         while true do
             pcall(function()
+                -- 1. Tulis ke file lokal agar akun bot dalam 1 device bisa membaca
+                if writefile then
+                    writefile(JOB_FILE_NAME, game.JobId)
+                end
+                
+                -- 2. Kirim juga ke Webhook Discord untuk cadangan/notifikasi
                 local payload = {
-                    ["content"] = game.JobId -- Mengirim JobID aktif
+                    ["content"] = "Host JobID: `" .. game.JobId .. "`"
                 }
                 
                 httpRequest({
@@ -39,27 +44,19 @@ if LocalPlayer.Name == HOST_ACCOUNT_NAME then
                     Body = HttpService:JSONEncode(payload)
                 })
             end)
-            task.wait(15) -- Kirim update tiap 15 detik
+            task.wait(10) -- Update tiap 10 detik
         end
     end)
 
--- ================= FUNGSI AKUN BOT (SLAVE/PENGUKUT) =================
+-- ================= FUNGSI AKUN BOT (SLAVE / PENGIKUT) =================
 else
-    print("[SLAVE] Akun bot aktif. Memantau server utama...")
+    print("[SLAVE] Akun bot aktif. Memantau file server utama...")
     
-    -- Karena Discord Webhook tidak bisa dibaca balik isinya tanpa Bot, 
-    -- kita pakai trik alternatif paling gampang untuk 1 device Android: 
-    -- Menyimpan JobID ke file teks lokal di folder workspace executor yang bisa dibaca bersama!
-    
-    local JOB_FILE_NAME = "mainuhuy_server.txt"
-    
-    -- HOST JUGA TULIS KE FILE LOKAL (Jaga-jaga kalau folder workspace dishare antar clone)
-    -- Tapi untuk bot, kita buat sistem pembaca file teks bersama:
     task.spawn(function()
         local lastTarget = ""
         while true do
             pcall(function()
-                -- Jika executor support write/read file dan membaca file dari direktori bersama
+                -- Cek apakah file lokal dari host tersedia dan bisa dibaca
                 if readfile and isfile and isfile(JOB_FILE_NAME) then
                     local targetJobId = readfile(JOB_FILE_NAME)
                     
@@ -73,7 +70,7 @@ else
                     end
                 end
             end)
-            task.wait(5)
+            task.wait(3) -- Cek file tiap 3 detik
         end
     end)
 end
