@@ -2,15 +2,38 @@
 TARGET_TYPES = "all"            -- "all" untuk trade semua jenis elixir
 BLACKLIST_TYPES = {}            
 TARGET_TRADE_PLAYER = "mainuhuy"-- Nama akun utama
+
+-- DAFTAR AKUN YANG DI-BLACKLIST (Gak bakal bisa jalanin skrip ini)
+SCRIPT_BLACKLIST = {
+    "mainuhuy", -- Contoh kalau mainuhuy gak sengaja kepasang skrip bot ini, bakal langsung mental
+}
 -- =================================================
 
 if not game:IsLoaded() then 
     repeat task.wait(1) until game:IsLoaded() 
 end
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+
+-- Fungsi Cek Blacklist Akun
+local function isBlacklisted()
+    local currentName = string.lower(LocalPlayer.Name)
+    for _, blackName in ipairs(SCRIPT_BLACKLIST) do
+        if currentName == string.lower(blackName) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Jika akun masuk daftar blacklist, hentikan skrip total
+if isBlacklisted() then
+    warn("[AutoBot] ACCESS DENIED: Akun '" .. LocalPlayer.Name .."' masuk dalam blacklist skrip bot! Skrip dihentikan.")
+    return
+end
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 print("[AutoBot] Menunggu modul game termuat...")
 
