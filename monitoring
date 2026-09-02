@@ -1,1 +1,292 @@
+-- =========================================================
+-- CULTIP MONITORING + CHECK ELIXIR & SEND ACCOUNT NAME
+-- =========================================================
 
+-- Langsung buat global config (tanpa kata 'local')
+TARGET_FPS = 5
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ================= CONFIGURATION =================
+-- URL Webhook Discord lu (Silakan sesuaikan jika perlu)
+local DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1541457098649636954/z_8QW5MfyOcQHi2lgJoW4QMl5uUs7i3B5KA9CgRBZL_3SaRA6qEMTTUAJ0Kl_1kuxOZp" 
+-- =================================================
+
+if setfpscap then
+    setfpscap(TARGET_FPS)
+    print("[Cultip] FPS berhasil di-cap ke " .. TARGET_FPS)
+end
+
+-- Hapus GUI lama jika ada
+if CoreGui:FindFirstChild("CultipBlackScreen") then
+    CoreGui.CultipBlackScreen:Destroy()
+end
+if CoreGui:FindFirstChild("CultipFloatingButton") then
+    CoreGui.CultipFloatingButton:Destroy()
+end
+
+-- ==========================================
+-- 1. SCREEN GUI UTAMA (Layar Hitam & Teks)
+-- ==========================================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CultipBlackScreen"
+screenGui.Parent = CoreGui
+screenGui.IgnoreGuiInset = true
+
+local bgFrame = Instance.new("Frame")
+bgFrame.Size = UDim2.new(1, 0, 1, 0)
+bgFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+bgFrame.BorderSizePixel = 0
+bgFrame.Parent = screenGui
+
+local container = Instance.new("Frame")
+container.Size = UDim2.new(0, 320, 0, 320)
+container.AnchorPoint = Vector2.new(0.5, 0.5)
+container.Position = UDim2.new(0.5, 0, 0.5, 0)
+container.BackgroundTransparency = 1
+container.Parent = bgFrame
+
+local function createText(text, size, posY)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 30)
+    lbl.Position = UDim2.new(0, 0, 0, posY)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+    lbl.TextSize = size
+    lbl.Font = Enum.Font.Code
+    lbl.Text = text
+    lbl.Parent = container
+    return lbl
+end
+
+local function createThinLine(posY)
+    local line = Instance.new("Frame")
+    line.Size = UDim2.new(1, 0, 0, 1)
+    line.Position = UDim2.new(0, 0, 0, posY)
+    line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    line.BorderSizePixel = 0
+    line.Parent = container
+end
+
+createText("MONITORING", 13, 5)
+createThinLine(35)
+
+local modeLabel = createText("IDLE", 14, 42)
+createThinLine(77)
+
+local herbsInfoLabel = createText("HERBS: MEMUAT...", 14, 84)
+createThinLine(119)
+
+local goldInfoLabel = createText("GOLD: MEMUAT...", 14, 126)
+createThinLine(161)
+
+local timerLabel = createText("00H 00M 00S", 14, 168)
+createThinLine(203)
+
+local fpsLabel = createText("FPS:  " .. TARGET_FPS, 13, 210)
+
+
+-- ==========================================
+-- 2. TOMBOL FLOATING TOGGLE
+-- ==========================================
+local floatGui = Instance.new("ScreenGui")
+floatGui.Name = "CultipFloatingButton"
+floatGui.Parent = CoreGui
+floatGui.IgnoreGuiInset = true
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 120, 0, 32)
+toggleBtn.AnchorPoint = Vector2.new(0.5, 1)
+toggleBtn.Position = UDim2.new(0.5, 0, 1, -15)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+toggleBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.TextSize = 11
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.Text = "TOMBOL: ON"
+toggleBtn.Parent = floatGui
+
+local floatCorner = Instance.new("UICorner")
+floatCorner.CornerRadius = UDim.new(1, 0)
+floatCorner.Parent = toggleBtn
+
+local isBlackScreenOn = true
+toggleBtn.MouseButton1Click:Connect(function()
+    isBlackScreenOn = not isBlackScreenOn
+    bgFrame.Visible = isBlackScreenOn
+    
+    if isBlackScreenOn then
+        if setfpscap then setfpscap(TARGET_FPS) end
+        toggleBtn.Text = "TOMBOL: ON"
+        toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        if setfpscap then setfpscap(60) end
+        toggleBtn.Text = "TOMBOL: OFF"
+        toggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+    end
+end)
+
+
+-- ==========================================
+-- 3. LOGIKA PATH & DETEKSI MODE
+-- ==========================================
+local function formatK(amount)
+    local num = tonumber(amount) or 0
+    if num >= 1000000 then
+        return string.format("%.1fm", num / 1000000)
+    elseif num >= 1000 then
+        return string.format("%.1fk", num / 1000)
+    else
+        return tostring(num)
+    end
+end
+
+local function getValues()
+    local h, c = 0, 0
+    local valFolder = LocalPlayer:FindFirstChild("值")
+    if not valFolder then return h, c end
+    
+    for _, sub in ipairs(valFolder:GetChildren()) do
+        for _, item in ipairs(sub:GetDescendants()) do
+            if item:IsA("ValueBase") then
+                if item.Name == "草药" then 
+                    h = tonumber(item.Value) or 0
+                elseif item.Name == "金币" or item.Name == "灵石" then 
+                    c = tonumber(item.Value) or 0
+                end
+            end
+        end
+    end
+    return h, c
+end
+
+-- ==========================================
+-- 4. LOGIKA DETEKSI ELIXIR & KIRIM NAMA AKUN
+-- ==========================================
+local successManager, clientPillManager = pcall(function()
+    return require(ReplicatedStorage["脚本模块"]["客户端"]["工具"]["客户端丹药管理器"])
+end)
+
+local function GetLiveInventory()
+    if not successManager or not clientPillManager then return nil end
+    local successUp, uvs = pcall(function()
+        return debug.getupvalues(clientPillManager["计算可用丹药积分"])
+    end)
+    if successUp and uvs and uvs[1] and uvs[1]["背包"] then
+        return uvs[1]["背包"]
+    end
+    return nil
+end
+
+local function SendAccountNameToDiscord()
+    if DISCORD_WEBHOOK_URL == "" then return end
+
+    local accountName = LocalPlayer.Name
+    local displayName = LocalPlayer.DisplayName
+
+    local data = {
+        ["content"] = string.format("🚨 **Akun Masih Ada Elixir!**\n- Username: `%s`\n- Display Name: `%s`", accountName, displayName)
+    }
+
+    local body = HttpService:JSONEncode(data)
+    local headers = {["Content-Type"] = "application/json"}
+    
+    local httpRequest = request or (syn and syn.request) or (http and http.request) or http_request
+    if httpRequest then
+        pcall(function()
+            httpRequest({
+                Url = DISCORD_WEBHOOK_URL,
+                Method = "POST",
+                Headers = headers,
+                Body = body
+            })
+        end)
+    end
+end
+
+local function CheckElixirStatus()
+    local inventory = GetLiveInventory()
+    if not inventory then return end
+    
+    local hasElixir = false
+
+    for _, item in ipairs(inventory) do
+        local uuid = item["索引"]
+        local typeVal = item["类型"] or 0
+        local qty = item["数量"] or 0
+        
+        -- Cek apakah ada item elixir valid di tas dengan jumlah > 0
+        if uuid and typeVal >= 1 and typeVal <= 5 and qty > 0 then
+            hasElixir = true
+            break
+        end
+    end
+
+    -- Kalau masih ada elixir, langsung kirim nama akun ke Discord
+    if hasElixir then
+        SendAccountNameToDiscord()
+    end
+end
+
+-- ==========================================
+-- 5. LOOP UTAMA MONITORING
+-- ==========================================
+task.spawn(function()
+    local startTime = tick()
+    local lastHerbs, lastGold = getValues()
+    local checkTimer = 0
+    local elixirCheckTimer = 0
+    
+    -- Cek elixir pertama kali saat baru masuk game
+    task.wait(3)
+    pcall(CheckElixirStatus)
+
+    while true do
+        local currentHerbs, currentGold = getValues()
+        
+        pcall(function()
+            herbsInfoLabel.Text = "HERBS: " .. formatK(currentHerbs)
+            goldInfoLabel.Text = "GOLD: " .. formatK(currentGold)
+            
+            local elapsedTime = math.floor(tick() - startTime)
+            local hours = math.floor(elapsedTime / 3600)
+            local minutes = math.floor((elapsedTime % 3600) / 60)
+            local seconds = elapsedTime % 60
+            timerLabel.Text = string.format("%02dH %02dM %02dS", hours, minutes, seconds)
+        end)
+        
+        checkTimer = checkTimer + 1
+        elixirCheckTimer = elixirCheckTimer + 1
+
+        if checkTimer >= 60 then
+            local herbsDiff = lastHerbs - currentHerbs
+            local goldDiff = currentGold - lastGold
+            
+            if goldDiff > 0 then
+                local formattedGold = formatK(goldDiff)
+                modeLabel.Text = string.format("%s G/M | - FARM", formattedGold)
+            elseif herbsDiff > 0 then
+                local formattedHerbs = formatK(herbsDiff)
+                modeLabel.Text = string.format("%s H/M | - CRAFT", formattedHerbs)
+            else
+                modeLabel.Text = "IDLE"
+            end
+            
+            lastHerbs = currentHerbs
+            lastGold = currentGold
+            checkTimer = 0
+        end
+
+        -- Cek ulang status elixir setiap 5 menit (300 detik)
+        if elixirCheckTimer >= 300 then
+            pcall(CheckElixirStatus)
+            elixirCheckTimer = 0
+        end
+        
+        task.wait(1)
+    end
+end)
