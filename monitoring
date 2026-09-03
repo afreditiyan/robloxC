@@ -1,18 +1,18 @@
 -- =========================================================
--- CULTIP MONITORING + CHECK ELIXIR & SEND ACCOUNT NAME
+-- CULTIP MONITORING + CHECK ELIXIR & SENDER (FIXED & READY)
 -- =========================================================
 
--- Langsung buat global config (tanpa kata 'local')
 TARGET_FPS = 5
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- ================= CONFIGURATION =================
--- URL Webhook Discord lu (Silakan sesuaikan jika perlu)
 local DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1541457098649636954/z_8QW5MfyOcQHi2lgJoW4QMl5uUs7i3B5KA9CgRBZL_3SaRA6qEMTTUAJ0Kl_1kuxOZp" 
 -- =================================================
 
@@ -30,7 +30,7 @@ if CoreGui:FindFirstChild("CultipFloatingButton") then
 end
 
 -- ==========================================
--- 1. SCREEN GUI UTAMA (Layar Hitam & Teks)
+-- 1. SCREEN GUI UTAMA (Layar Hitam & Teks Besar)
 -- ==========================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CultipBlackScreen"
@@ -44,7 +44,7 @@ bgFrame.BorderSizePixel = 0
 bgFrame.Parent = screenGui
 
 local container = Instance.new("Frame")
-container.Size = UDim2.new(0, 320, 0, 320)
+container.Size = UDim2.new(0, 360, 0, 380)
 container.AnchorPoint = Vector2.new(0.5, 0.5)
 container.Position = UDim2.new(0.5, 0, 0.5, 0)
 container.BackgroundTransparency = 1
@@ -52,7 +52,7 @@ container.Parent = bgFrame
 
 local function createText(text, size, posY)
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 0, 30)
+    lbl.Size = UDim2.new(1, 0, 0, 40)
     lbl.Position = UDim2.new(0, 0, 0, posY)
     lbl.BackgroundTransparency = 1
     lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -65,33 +65,33 @@ end
 
 local function createThinLine(posY)
     local line = Instance.new("Frame")
-    line.Size = UDim2.new(1, 0, 0, 1)
+    line.Size = UDim2.new(1, 0, 0, 2)
     line.Position = UDim2.new(0, 0, 0, posY)
     line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     line.BorderSizePixel = 0
     line.Parent = container
 end
 
-createText("MONITORING", 13, 5)
-createThinLine(35)
+createText("MONITORING", 16, 5)
+createThinLine(45)
 
-local modeLabel = createText("IDLE", 14, 42)
-createThinLine(77)
+local modeLabel = createText("IDLE", 18, 55)
+createThinLine(95)
 
-local herbsInfoLabel = createText("HERBS: MEMUAT...", 14, 84)
-createThinLine(119)
+local herbsInfoLabel = createText("HERBS: MEMUAT...", 18, 105)
+createThinLine(145)
 
-local goldInfoLabel = createText("GOLD: MEMUAT...", 14, 126)
-createThinLine(161)
+local goldInfoLabel = createText("GOLD: MEMUAT...", 18, 155)
+createThinLine(195)
 
-local timerLabel = createText("00H 00M 00S", 14, 168)
-createThinLine(203)
+local timerLabel = createText("00H 00M 00S", 18, 205)
+createThinLine(255)
 
-local fpsLabel = createText("FPS:  " .. TARGET_FPS, 13, 210)
+local fpsLabel = createText("FPS:  " .. TARGET_FPS, 16, 265)
 
 
 -- ==========================================
--- 2. TOMBOL FLOATING TOGGLE
+-- 2. TOMBOL FLOATING (GESER + AUTO RETURN 10 DETIK)
 -- ==========================================
 local floatGui = Instance.new("ScreenGui")
 floatGui.Name = "CultipFloatingButton"
@@ -99,13 +99,13 @@ floatGui.Parent = CoreGui
 floatGui.IgnoreGuiInset = true
 
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 120, 0, 32)
-toggleBtn.AnchorPoint = Vector2.new(0.5, 1)
-toggleBtn.Position = UDim2.new(0.5, 0, 1, -15)
+toggleBtn.Size = UDim2.new(0, 140, 0, 40)
+local defaultPos = UDim2.new(0.5, -70, 1, -60)
+toggleBtn.Position = defaultPos
 toggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 toggleBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.TextSize = 11
+toggleBtn.TextSize = 13
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.Text = "TOMBOL: ON"
 toggleBtn.Parent = floatGui
@@ -115,7 +115,45 @@ floatCorner.CornerRadius = UDim.new(1, 0)
 floatCorner.Parent = toggleBtn
 
 local isBlackScreenOn = true
+local lastInteractionTick = tick()
+local isDragging = false
+local dragStart, startPos, moved = false, nil, false
+
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDragging = true
+        moved = false
+        dragStart = input.Position
+        startPos = toggleBtn.Position
+        lastInteractionTick = tick()
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        if delta.Magnitude > 5 then
+            moved = true
+        end
+        toggleBtn.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X, 
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+        lastInteractionTick = tick()
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isDragging = false
+    end
+end)
+
+-- Fungsi Toggle ON/OFF Layar Hitam (Hanya aktif jika tidak sedang digeser)
 toggleBtn.MouseButton1Click:Connect(function()
+    if moved then return end
     isBlackScreenOn = not isBlackScreenOn
     bgFrame.Visible = isBlackScreenOn
     
@@ -127,6 +165,20 @@ toggleBtn.MouseButton1Click:Connect(function()
         if setfpscap then setfpscap(60) end
         toggleBtn.Text = "TOMBOL: OFF"
         toggleBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
+    end
+end)
+
+-- Task Timer 10 Detik: Kembali ke posisi awal jika tidak disentuh
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if not isDragging and (tick() - lastInteractionTick >= 10) then
+            if toggleBtn.Position ~= defaultPos then
+                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local tween = TweenService:Create(toggleBtn, tweenInfo, {Position = defaultPos})
+                tween:Play()
+            end
+        end
     end
 end)
 
@@ -219,14 +271,12 @@ local function CheckElixirStatus()
         local typeVal = item["类型"] or 0
         local qty = item["数量"] or 0
         
-        -- Cek apakah ada item elixir valid di tas dengan jumlah > 0
         if uuid and typeVal >= 1 and typeVal <= 5 and qty > 0 then
             hasElixir = true
             break
         end
     end
 
-    -- Kalau masih ada elixir, langsung kirim nama akun ke Discord
     if hasElixir then
         SendAccountNameToDiscord()
     end
@@ -241,7 +291,6 @@ task.spawn(function()
     local checkTimer = 0
     local elixirCheckTimer = 0
     
-    -- Cek elixir pertama kali saat baru masuk game
     task.wait(3)
     pcall(CheckElixirStatus)
 
@@ -281,7 +330,6 @@ task.spawn(function()
             checkTimer = 0
         end
 
-        -- Cek ulang status elixir setiap 5 menit (300 detik)
         if elixirCheckTimer >= 300 then
             pcall(CheckElixirStatus)
             elixirCheckTimer = 0
