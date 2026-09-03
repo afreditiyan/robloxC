@@ -1,5 +1,5 @@
 -- =========================================================
--- CULTIP MONITORING + CHECK ELIXIR & SENDER (FIXED & READY)
+-- CULTIP MASTER SCRIPT: OPTIMIZED & LIGHTWEIGHT
 -- =========================================================
 
 TARGET_FPS = 5
@@ -14,6 +14,7 @@ local LocalPlayer = Players.LocalPlayer
 
 -- ================= CONFIGURATION =================
 local DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1541457098649636954/z_8QW5MfyOcQHi2lgJoW4QMl5uUs7i3B5KA9CgRBZL_3SaRA6qEMTTUAJ0Kl_1kuxOZp" 
+local TARGET_PLAYER_NAME = "BlizzardbQChaosa20" -- Target akun yang mau disusul
 -- =================================================
 
 if setfpscap then
@@ -151,7 +152,6 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Fungsi Toggle ON/OFF Layar Hitam (Hanya aktif jika tidak sedang digeser)
 toggleBtn.MouseButton1Click:Connect(function()
     if moved then return end
     isBlackScreenOn = not isBlackScreenOn
@@ -168,7 +168,6 @@ toggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Task Timer 10 Detik: Kembali ke posisi awal jika tidak disentuh
 task.spawn(function()
     while true do
         task.wait(1)
@@ -184,7 +183,7 @@ end)
 
 
 -- ==========================================
--- 3. LOGIKA PATH & DETEKSI MODE
+-- 3. VALS & GETTERS (PENGAMBILAN DATA)
 -- ==========================================
 local function formatK(amount)
     local num = tonumber(amount) or 0
@@ -216,8 +215,56 @@ local function getValues()
     return h, c
 end
 
+
 -- ==========================================
--- 4. LOGIKA DETEKSI ELIXIR & KIRIM NAMA AKUN
+-- 4. REMOTE PATHS & LOGIC (ONE-TIME TRIGGER & STOP)
+-- ==========================================
+local joinWorldRemote = ReplicatedStorage
+    :FindFirstChild("\228\186\139\228\187\182")
+    :FindFirstChild("\229\133\172\231\148\168")
+    :FindFirstChild("\229\133\179\229\141\161")
+    :FindFirstChild("\232\191\155\229\133\165\229\188\128\229\144\175\228\184\173\229\133\179\229\141\161")
+
+local supportModeRemote = ReplicatedStorage
+    :FindFirstChild("\228\186\139\228\187\182")
+    :FindFirstChild("\229\133\172\231\148\168")
+    :FindFirstChild("\230\136\152\230\150\151")
+    :FindFirstChild("\230\155\180\230\150\176\229\141\143\229\138\169\231\155\174\230\160\135")
+
+-- Task Cek Gold & Auto Join (Akan otomatis mati/berhenti total begitu support mode aktif)
+task.spawn(function()
+    local _, lastRecordedGold = getValues()
+    task.wait(1)
+    
+    while true do
+        local _, currentGold = getValues()
+        local targetPlayer = Players:FindFirstChild(TARGET_PLAYER_NAME)
+        
+        if currentGold > lastRecordedGold then
+            if supportModeRemote then
+                pcall(function()
+                    supportModeRemote:FireServer()
+                end)
+                print("[Support] Gold bertambah! Support mode diaktifkan, task dihentikan agar ringan.")
+            end
+            -- Hentikan total loop ini supaya tidak membebani performa game ke depannya
+            break 
+        else
+            if joinWorldRemote and targetPlayer then
+                pcall(function()
+                    joinWorldRemote:FireServer(targetPlayer)
+                end)
+            end
+        end
+        
+        lastRecordedGold = currentGold
+        task.wait(1)
+    end
+end)
+
+
+-- ==========================================
+-- 5. ELIXIR CHECK & WEBHOOK SENDER
 -- ==========================================
 local successManager, clientPillManager = pcall(function()
     return require(ReplicatedStorage["脚本模块"]["客户端"]["工具"]["客户端丹药管理器"])
@@ -282,8 +329,9 @@ local function CheckElixirStatus()
     end
 end
 
+
 -- ==========================================
--- 5. LOOP UTAMA MONITORING
+-- 6. LOOP UTAMA MONITORING GUI
 -- ==========================================
 task.spawn(function()
     local startTime = tick()
@@ -317,10 +365,10 @@ task.spawn(function()
             
             if goldDiff > 0 then
                 local formattedGold = formatK(goldDiff)
-                modeLabel.Text = string.format("%s G/M | - FARM", formattedGold)
+                modeLabel.Text = string.format("%s  G/M | - FARM", formattedGold)
             elseif herbsDiff > 0 then
                 local formattedHerbs = formatK(herbsDiff)
-                modeLabel.Text = string.format("%s H/M | - CRAFT", formattedHerbs)
+                modeLabel.Text = string.format("%s  H/M | - CRAFT", formattedHerbs)
             else
                 modeLabel.Text = "IDLE"
             end
