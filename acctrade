@@ -11,7 +11,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- KONFIGURASI NAMA AKUN UTAMA
-local TARGET_MAIN_ACCOUNT = "mainuhuy"
+local TARGET_MAIN_ACCOUNT = "YUZU"
 
 -- Cek apakah yang menjalankan skrip ini benar-benar mainuhuy
 if string.lower(LocalPlayer.Name) ~= string.lower(TARGET_MAIN_ACCOUNT) then
