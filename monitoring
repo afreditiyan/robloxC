@@ -1,5 +1,5 @@
 -- =========================================================
--- CULTIP MASTER SCRIPT: 22PT BOLD RETRO FONT + 0.5S ANTI-STUCK
+-- CULTIP MASTER SCRIPT: 22PT BOLD RETRO FONT + 0.5S ANTI-STUCK (LOOP)
 -- =========================================================
 
 TARGET_FPS = 5
@@ -19,7 +19,7 @@ local TARGET_URL = "https://github.com/afreditiyan/robloxC/raw/refs/heads/main/u
 
 if setfpscap then
     setfpscap(TARGET_FPS)
-    print("[Cultip] FPS berhasil di-cap ke " .. TARGET_FPS)
+    print("[Cultip] FPS berhasil di-cap ke " + TARGET_FPS)
 end
 
 -- Hapus GUI lama jika ada
@@ -239,7 +239,7 @@ end
 
 
 -- ==========================================
--- 4. REMOTE PATHS & LOGIC (ANTI-STUCK 0.5S & SUPPORT)
+-- 4. REMOTE PATHS & LOGIC (ANTI-STUCK 0.5S & SUPPORT LOOP)
 -- ==========================================
 local joinWorldRemote = ReplicatedStorage
     :FindFirstChild("\228\186\139\228\187\182")
@@ -257,18 +257,24 @@ task.spawn(function()
     local _, lastRecordedGold = getValues()
     task.wait(2)
     
+    local alreadyTriggeredSupport = false
+    
     while true do
         local _, currentGold = getValues()
         
         if currentGold > lastRecordedGold then
-            if supportModeRemote then
-                pcall(function()
-                    supportModeRemote:FireServer()
-                end)
-                print("[Support] Gold bertambah! Support mode diaktifkan.")
+            if not alreadyTriggeredSupport then
+                if supportModeRemote then
+                    pcall(function()
+                        supportModeRemote:FireServer()
+                    end)
+                    print("[Support] Gold bertambah! Support mode diaktifkan.")
+                end
+                alreadyTriggeredSupport = true
             end
-            break 
         else
+            alreadyTriggeredSupport = false
+            
             if joinWorldRemote then
                 local targets = GetTargetList()
                 for _, targetName in ipairs(targets) do
