@@ -1,5 +1,5 @@
 -- =========================================================
--- CULTIP MASTER SCRIPT: OPTIMIZED & LIGHTWEIGHT
+-- CULTIP MASTER SCRIPT: ANTI-STUCK SPAM JOIN & SUPPORT
 -- =========================================================
 
 TARGET_FPS = 5
@@ -217,7 +217,7 @@ end
 
 
 -- ==========================================
--- 4. REMOTE PATHS & LOGIC (ONE-TIME TRIGGER & STOP)
+-- 4. REMOTE PATHS & LOGIC (ANTI-STUCK SPAM & SUPPORT)
 -- ==========================================
 local joinWorldRemote = ReplicatedStorage
     :FindFirstChild("\228\186\139\228\187\182")
@@ -231,7 +231,7 @@ local supportModeRemote = ReplicatedStorage
     :FindFirstChild("\230\136\152\230\150\151")
     :FindFirstChild("\230\155\180\230\150\176\229\141\143\229\138\169\231\155\174\230\160\135")
 
--- Task Cek Gold & Auto Join (Akan otomatis mati/berhenti total begitu support mode aktif)
+-- Task Anti-Stuck & Support Loop
 task.spawn(function()
     local _, lastRecordedGold = getValues()
     task.wait(1)
@@ -240,16 +240,17 @@ task.spawn(function()
         local _, currentGold = getValues()
         local targetPlayer = Players:FindFirstChild(TARGET_PLAYER_NAME)
         
+        -- Jika gold bertambah, aktifkan support mode lalu matikan task ini agar ringan
         if currentGold > lastRecordedGold then
             if supportModeRemote then
                 pcall(function()
                     supportModeRemote:FireServer()
                 end)
-                print("[Support] Gold bertambah! Support mode diaktifkan, task dihentikan agar ringan.")
+                print("[Support] Gold bertambah! Support mode diaktifkan.")
             end
-            -- Hentikan total loop ini supaya tidak membebani performa game ke depannya
             break 
         else
+            -- Jika gold stuck (tidak bertambah), terus spam RemoteEvent masuk ke bangunan/world target setiap 1 detik
             if joinWorldRemote and targetPlayer then
                 pcall(function()
                     joinWorldRemote:FireServer(targetPlayer)
@@ -365,10 +366,10 @@ task.spawn(function()
             
             if goldDiff > 0 then
                 local formattedGold = formatK(goldDiff)
-                modeLabel.Text = string.format("%s  G/M | - FARM", formattedGold)
+                modeLabel.Text = string.format("%s G/M | - FARM", formattedGold)
             elseif herbsDiff > 0 then
                 local formattedHerbs = formatK(herbsDiff)
-                modeLabel.Text = string.format("%s  H/M | - CRAFT", formattedHerbs)
+                modeLabel.Text = string.format("%s H/M | - CRAFT", formattedHerbs)
             else
                 modeLabel.Text = "IDLE"
             end
