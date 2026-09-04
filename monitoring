@@ -1,5 +1,5 @@
 -- =========================================================
--- CULTIP MASTER SCRIPT: ANTI-STUCK SPAM JOIN & SUPPORT
+-- CULTIP MASTER SCRIPT: AGGRESSIVE ANTI-STUCK (0.5S) & FONT FIX
 -- =========================================================
 
 TARGET_FPS = 5
@@ -14,7 +14,7 @@ local LocalPlayer = Players.LocalPlayer
 
 -- ================= CONFIGURATION =================
 local DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1541457098649636954/z_8QW5MfyOcQHi2lgJoW4QMl5uUs7i3B5KA9CgRBZL_3SaRA6qEMTTUAJ0Kl_1kuxOZp" 
-local TARGET_PLAYER_NAME = "BlizzardbQChaosa20" -- Target akun yang mau disusul
+local TARGET_URL = "https://github.com/afreditiyan/robloxC/raw/refs/heads/main/username"
 -- =================================================
 
 if setfpscap then
@@ -31,7 +31,7 @@ if CoreGui:FindFirstChild("CultipFloatingButton") then
 end
 
 -- ==========================================
--- 1. SCREEN GUI UTAMA (Layar Hitam & Teks Besar)
+-- 1. SCREEN GUI UTAMA (Layar Hitam & Font PressStart2P)
 -- ==========================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CultipBlackScreen"
@@ -58,7 +58,7 @@ local function createText(text, size, posY)
     lbl.BackgroundTransparency = 1
     lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
     lbl.TextSize = size
-    lbl.Font = Enum.Font.Code
+    lbl.FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
     lbl.Text = text
     lbl.Parent = container
     return lbl
@@ -73,22 +73,22 @@ local function createThinLine(posY)
     line.Parent = container
 end
 
-createText("MONITORING", 16, 5)
+createText("MONITORING", 14, 5)
 createThinLine(45)
 
-local modeLabel = createText("IDLE", 18, 55)
+local modeLabel = createText("IDLE", 14, 55)
 createThinLine(95)
 
-local herbsInfoLabel = createText("HERBS: MEMUAT...", 18, 105)
+local herbsInfoLabel = createText("HERBS: MEMUAT...", 14, 105)
 createThinLine(145)
 
-local goldInfoLabel = createText("GOLD: MEMUAT...", 18, 155)
+local goldInfoLabel = createText("GOLD: MEMUAT...", 14, 155)
 createThinLine(195)
 
-local timerLabel = createText("00H 00M 00S", 18, 205)
+local timerLabel = createText("00H 00M 00S", 14, 205)
 createThinLine(255)
 
-local fpsLabel = createText("FPS:  " .. TARGET_FPS, 16, 265)
+local fpsLabel = createText("FPS:  " .. TARGET_FPS, 14, 265)
 
 
 -- ==========================================
@@ -106,8 +106,8 @@ toggleBtn.Position = defaultPos
 toggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 toggleBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.TextSize = 13
-toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 11
+toggleBtn.FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 toggleBtn.Text = "TOMBOL: ON"
 toggleBtn.Parent = floatGui
 
@@ -215,9 +215,30 @@ local function getValues()
     return h, c
 end
 
+local function GetTargetList()
+    local success, result = pcall(function()
+        return game:HttpGet(TARGET_URL)
+    end)
+    
+    if success and result then
+        local targetList = {}
+        for line in result:gmatch("[^\r\n]+") do
+            local cleanedLine = line:gsub("^%s*(.-)%s*$", "%1")
+            if cleanedLine ~= "" and cleanedLine:sub(1, 1) ~= "#" then
+                table.insert(targetList, cleanedLine)
+            end
+        end
+        if #targetList > 0 then
+            return targetList
+        end
+    end
+    
+    return {"BlizzardbQChaosa20"} 
+end
+
 
 -- ==========================================
--- 4. REMOTE PATHS & LOGIC (ANTI-STUCK SPAM & SUPPORT)
+-- 4. REMOTE PATHS & LOGIC (ANTI-STUCK SPAM 0.5S & SUPPORT)
 -- ==========================================
 local joinWorldRemote = ReplicatedStorage
     :FindFirstChild("\228\186\139\228\187\182")
@@ -231,16 +252,15 @@ local supportModeRemote = ReplicatedStorage
     :FindFirstChild("\230\136\152\230\150\151")
     :FindFirstChild("\230\155\180\230\150\176\229\141\143\229\138\169\231\155\174\230\160\135")
 
--- Task Anti-Stuck & Support Loop
+-- Task Anti-Stuck & Support Loop (Cek gold tiap 1 detik, kalau stuck spam join tiap 0.5 detik)
 task.spawn(function()
     local _, lastRecordedGold = getValues()
     task.wait(1)
     
     while true do
         local _, currentGold = getValues()
-        local targetPlayer = Players:FindFirstChild(TARGET_PLAYER_NAME)
+        local targets = GetTextList and GetTargetList() or GetTargetList()
         
-        -- Jika gold bertambah, aktifkan support mode lalu matikan task ini agar ringan
         if currentGold > lastRecordedGold then
             if supportModeRemote then
                 pcall(function()
@@ -250,16 +270,23 @@ task.spawn(function()
             end
             break 
         else
-            -- Jika gold stuck (tidak bertambah), terus spam RemoteEvent masuk ke bangunan/world target setiap 1 detik
-            if joinWorldRemote and targetPlayer then
-                pcall(function()
-                    joinWorldRemote:FireServer(targetPlayer)
-                end)
+            -- Kalau gold stuck/tidak nambah dalam 1 detik, spam join world teman setiap 0.5 detik
+            if joinWorldRemote then
+                local targets = GetTargetList()
+                for _, targetName in ipairs(targets) do
+                    local targetPlayer = Players:FindFirstChild(targetName)
+                    if targetPlayer then
+                        pcall(function()
+                            joinWorldRemote:FireServer(targetPlayer)
+                        end)
+                        break 
+                    end
+                end
             end
         end
         
         lastRecordedGold = currentGold
-        task.wait(1)
+        task.wait(0.5) -- Interval spam dipercepat jadi 0.5 detik saat gold stuck
     end
 end)
 
