@@ -1,5 +1,5 @@
 -- =========================================================
--- CULTIP MASTER SCRIPT: AGGRESSIVE ANTI-STUCK (0.5S) & FONT FIX
+-- CULTIP MASTER SCRIPT: 22PT BOLD RETRO FONT + 0.5S ANTI-STUCK
 -- =========================================================
 
 TARGET_FPS = 5
@@ -31,7 +31,7 @@ if CoreGui:FindFirstChild("CultipFloatingButton") then
 end
 
 -- ==========================================
--- 1. SCREEN GUI UTAMA (Layar Hitam & Font PressStart2P)
+-- 1. SCREEN GUI UTAMA (Layar Hitam & Huruf Jumbo 22)
 -- ==========================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CultipBlackScreen"
@@ -45,19 +45,20 @@ bgFrame.BorderSizePixel = 0
 bgFrame.Parent = screenGui
 
 local container = Instance.new("Frame")
-container.Size = UDim2.new(0, 360, 0, 380)
+container.Size = UDim2.new(0, 380, 0, 420)
 container.AnchorPoint = Vector2.new(0.5, 0.5)
 container.Position = UDim2.new(0.5, 0, 0.5, 0)
 container.BackgroundTransparency = 1
 container.Parent = bgFrame
 
-local function createText(text, size, posY)
+-- Ukuran teks konsisten 22 tebal menyala
+local function createText(text, posY)
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(1, 0, 0, 40)
+    lbl.Size = UDim2.new(1, 0, 0, 50)
     lbl.Position = UDim2.new(0, 0, 0, posY)
     lbl.BackgroundTransparency = 1
     lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-    lbl.TextSize = size
+    lbl.TextSize = 22
     lbl.FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
     lbl.Text = text
     lbl.Parent = container
@@ -73,22 +74,22 @@ local function createThinLine(posY)
     line.Parent = container
 end
 
-createText("MONITORING", 14, 5)
-createThinLine(45)
+createText("MONITORING", 5)
+createThinLine(55)
 
-local modeLabel = createText("IDLE", 14, 55)
-createThinLine(95)
+local modeLabel = createText("IDLE", 65)
+createThinLine(115)
 
-local herbsInfoLabel = createText("HERBS: MEMUAT...", 14, 105)
-createThinLine(145)
+local herbsInfoLabel = createText("HERBS: MEMUAT...", 125)
+createThinLine(175)
 
-local goldInfoLabel = createText("GOLD: MEMUAT...", 14, 155)
-createThinLine(195)
+local goldInfoLabel = createText("GOLD: MEMUAT...", 185)
+createThinLine(235)
 
-local timerLabel = createText("00H 00M 00S", 14, 205)
-createThinLine(255)
+local timerLabel = createText("00H 00M 00S", 245)
+createThinLine(295)
 
-local fpsLabel = createText("FPS:  " .. TARGET_FPS, 14, 265)
+local fpsLabel = createText("FPS:  " .. TARGET_FPS, 305)
 
 
 -- ==========================================
@@ -100,13 +101,13 @@ floatGui.Parent = CoreGui
 floatGui.IgnoreGuiInset = true
 
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 140, 0, 40)
-local defaultPos = UDim2.new(0.5, -70, 1, -60)
+toggleBtn.Size = UDim2.new(0, 150, 0, 45)
+local defaultPos = UDim2.new(0.5, -75, 1, -60)
 toggleBtn.Position = defaultPos
 toggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 toggleBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.TextSize = 11
+toggleBtn.TextSize = 13
 toggleBtn.FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 toggleBtn.Text = "TOMBOL: ON"
 toggleBtn.Parent = floatGui
@@ -238,7 +239,7 @@ end
 
 
 -- ==========================================
--- 4. REMOTE PATHS & LOGIC (ANTI-STUCK SPAM 0.5S & SUPPORT)
+-- 4. REMOTE PATHS & LOGIC (ANTI-STUCK 0.5S & SUPPORT)
 -- ==========================================
 local joinWorldRemote = ReplicatedStorage
     :FindFirstChild("\228\186\139\228\187\182")
@@ -252,14 +253,12 @@ local supportModeRemote = ReplicatedStorage
     :FindFirstChild("\230\136\152\230\150\151")
     :FindFirstChild("\230\155\180\230\150\176\229\141\143\229\138\169\231\155\174\230\160\135")
 
--- Task Anti-Stuck & Support Loop (Cek gold tiap 1 detik, kalau stuck spam join tiap 0.5 detik)
 task.spawn(function()
     local _, lastRecordedGold = getValues()
-    task.wait(1)
+    task.wait(2)
     
     while true do
         local _, currentGold = getValues()
-        local targets = GetTextList and GetTargetList() or GetTargetList()
         
         if currentGold > lastRecordedGold then
             if supportModeRemote then
@@ -270,7 +269,6 @@ task.spawn(function()
             end
             break 
         else
-            -- Kalau gold stuck/tidak nambah dalam 1 detik, spam join world teman setiap 0.5 detik
             if joinWorldRemote then
                 local targets = GetTargetList()
                 for _, targetName in ipairs(targets) do
@@ -286,7 +284,7 @@ task.spawn(function()
         end
         
         lastRecordedGold = currentGold
-        task.wait(0.5) -- Interval spam dipercepat jadi 0.5 detik saat gold stuck
+        task.wait(0.5)
     end
 end)
 
