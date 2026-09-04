@@ -1,5 +1,5 @@
 -- =========================================================
--- CULTIP MASTER SCRIPT: 22PT BOLD RETRO FONT + 0.5S ANTI-STUCK (LOOP)
+-- CULTIP MASTER SCRIPT: 22PT BOLD RETRO FONT + 0.5S FAST SPAM FIX
 -- =========================================================
 
 TARGET_FPS = 5
@@ -19,7 +19,7 @@ local TARGET_URL = "https://github.com/afreditiyan/robloxC/raw/refs/heads/main/u
 
 if setfpscap then
     setfpscap(TARGET_FPS)
-    print("[Cultip] FPS berhasil di-cap ke " + TARGET_FPS)
+    print("[Cultip] FPS berhasil di-cap ke " .. TARGET_FPS)
 end
 
 -- Hapus GUI lama jika ada
@@ -216,6 +216,7 @@ local function getValues()
     return h, c
 end
 
+-- Download list username dari GitHub SEKALI di awal biar siap pakai
 local function GetTargetList()
     local success, result = pcall(function()
         return game:HttpGet(TARGET_URL)
@@ -237,9 +238,11 @@ local function GetTargetList()
     return {"BlizzardbQChaosa20"} 
 end
 
+local cachedTargets = GetTargetList()
+
 
 -- ==========================================
--- 4. REMOTE PATHS & LOGIC (ANTI-STUCK 0.5S & SUPPORT LOOP)
+-- 4. REMOTE PATHS & LOGIC (FAST SPAM JOIN SAAT GOLD STUCK)
 -- ==========================================
 local joinWorldRemote = ReplicatedStorage
     :FindFirstChild("\228\186\139\228\187\182")
@@ -275,9 +278,9 @@ task.spawn(function()
         else
             alreadyTriggeredSupport = false
             
+            -- LANGSUNG SPAM FIRE SERVER KE TEMEN TANPA NUNGGU HTTP GET LAGI
             if joinWorldRemote then
-                local targets = GetTargetList()
-                for _, targetName in ipairs(targets) do
+                for _, targetName in ipairs(cachedTargets) do
                     local targetPlayer = Players:FindFirstChild(targetName)
                     if targetPlayer then
                         pcall(function()
