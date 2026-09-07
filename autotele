@@ -11,7 +11,7 @@ local WEBHOOK_URL = "https://discord.com/api/webhooks/1544733323350507520/qB1NvC
 local JOB_FILE_NAME = "mainuhuy_server.txt"
 
 -- SAKLAR FITUR TELEPORT (Ubah ke false kalau bot tidak mau ikut teleport)
-local ENABLE_AUTO_TELEPORT = false 
+local ENABLE_AUTO_TELEPORT = true 
 -- ====================================================
 
 -- Fungsi HTTP Request kompatibel dengan Delta Android
