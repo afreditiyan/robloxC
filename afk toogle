@@ -59,25 +59,6 @@ print("[Cultip Security] Whitelist terverifikasi! Menjalankan otomasi...")
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local function getValues()
-    local h, c = 0, 0
-    local valFolder = LocalPlayer:FindFirstChild("值")
-    if not valFolder then return h, c end
-    
-    for _, sub in ipairs(valFolder:GetChildren()) do
-        for _, item in ipairs(sub:GetDescendants()) do
-            if item:IsA("ValueBase") then
-                if item.Name == "草药" then 
-                    h = tonumber(item.Value) or 0
-                elseif item.Name == "金币" or item.Name == "灵石" then 
-                    c = tonumber(item.Value) or 0
-                end
-            end
-        end
-    end
-    return h, c
-end
-
 local joinWorldRemote = ReplicatedStorage
     :FindFirstChild("\228\186\139\228\187\182")
     :FindFirstChild("\229\133\172\231\148\168")
@@ -90,44 +71,37 @@ local supportModeRemote = ReplicatedStorage
     :FindFirstChild("\232\174\190\231\189\174")
     :FindFirstChild("\231\142\169\229\174\182\228\191\174\230\148\185\232\174\190\231\189\174")
 
--- Task Utama Auto World & AFK dengan Sistem Toleransi Gagal (Anti-False Alarm)
+-- Task Utama: Teleport 2x ke World lalu nyalakan Mode AFK
 task.spawn(function()
-    local _, lastRecordedGold = getValues()
+    if joinWorldRemote then
+        print("[Cultip] Melakukan teleport pertama ke World " .. targetWorld .. "...")
+        pcall(function()
+            local argsWorld = { [1] = targetWorld }
+            joinWorldRemote:FireServer(unpack(argsWorld))
+        end)
+        
+        -- Jeda sebentar sebelum teleport kedua
+        task.wait(1.5)
+        
+        print("[Cultip] Melakukan teleport kedua ke World " .. targetWorld .. "...")
+        pcall(function()
+            local argsWorld = { [1] = targetWorld }
+            joinWorldRemote:FireServer(unpack(argsWorld))
+        end)
+    else
+        warn("[Cultip] Remote Join World tidak ditemukan!")
+    end
+
+    -- Jeda sebentar setelah 2x teleport sebelum mengaktifkan AFK mode
     task.wait(2)
-    
-    local stuckCounter = 0
-    local MAX_STUCK_TOLERANCE = 6 -- Toleransi 6x pengecekan (sekitar 3 detik) sebelum dianggap benar-benar stuck
-    
-    while true do
-        local _, currentGold = getValues()
-        
-        -- Jika gold bertambah, reset hitungan stuck dan aktifkan remote AFK
-        if currentGold > lastRecordedGold then
-            stuckCounter = 0 -- Reset counter aman
-            if supportModeRemote then
-                pcall(function()
-                    local argsSetting = { [1] = "\232\135\170\229\138\168\230\136\152\230\150\151" }
-                    supportModeRemote:FireServer(unpack(argsSetting))
-                end)
-                print("[Cultip] Gold bertambah! Remote AFK/support diaktifkan.")
-            end
-            break 
-        else
-            -- Jika gold tidak bertambah, tambahkan hitungan stuck
-            stuckCounter = stuckCounter + 1
-            
-            -- Hanya eksekusi remote pindah world kalau sudah melewati batas toleransi
-            if stuckCounter >= MAX_STUCK_TOLERANCE then
-                if joinWorldRemote then
-                    pcall(function()
-                        local argsWorld = { [1] = targetWorld }
-                        joinWorldRemote:FireServer(unpack(argsWorld))
-                    end)
-                end
-            end
-        end
-        
-        lastRecordedGold = currentGold
-        task.wait(0.5)
+
+    if supportModeRemote then
+        print("[Cultip] Mengaktifkan Remote AFK/support...")
+        pcall(function()
+            local argsSetting = { [1] = "\232\135\170\229\138\168\230\136\152\230\150\151" }
+            supportModeRemote:FireServer(unpack(argsSetting))
+        end)
+    else
+        warn("[Cultip] Remote Support/AFK tidak ditemukan!")
     end
 end)
