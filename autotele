@@ -4,10 +4,15 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+-- ================= PENGATURAN UTAMA =================
 local HOST_ACCOUNT_NAME = "mainuhuy"
 local PLACE_ID = game.PlaceId
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1544733323350507520/qB1NvCWDhr-i-4OmT7jSSfqPTdC4fUxL4F-l3uhqCA9P_jCj68NThfRcR8Y_2As27NJt"
 local JOB_FILE_NAME = "mainuhuy_server.txt"
+
+-- SAKLAR FITUR TELEPORT (Ubah ke false kalau bot tidak mau ikut teleport)
+local ENABLE_AUTO_TELEPORT = false 
+-- ====================================================
 
 -- Fungsi HTTP Request kompatibel dengan Delta Android
 local function httpRequest(requestData)
@@ -50,22 +55,25 @@ if LocalPlayer.Name == HOST_ACCOUNT_NAME then
 
 -- ================= FUNGSI AKUN BOT (SLAVE / PENGIKUT) =================
 else
-    print("[SLAVE] Akun bot aktif. Memantau file server utama...")
+    print("[SLAVE] Akun bot aktif. Status Auto Teleport: " .. tostring(ENABLE_AUTO_TELEPORT))
     
     task.spawn(function()
         local lastTarget = ""
         while true do
             pcall(function()
-                -- Cek apakah file lokal dari host tersedia dan bisa dibaca
-                if readfile and isfile and isfile(JOB_FILE_NAME) then
-                    local targetJobId = readfile(JOB_FILE_NAME)
-                    
-                    if targetJobId and targetJobId ~= "" and targetJobId ~= game.JobId and targetJobId ~= lastTarget then
-                        if string.len(targetJobId) == 36 and string.find(targetJobId, "-") then
-                            lastTarget = targetJobId
-                            print("[SLAVE] Mendeteksi JobID baru: " .. targetJobId .. ". Pindah sekarang!")
-                            task.wait(2)
-                            TeleportService:TeleportToPlaceInstance(PLACE_ID, targetJobId, LocalPlayer)
+                -- Cek apakah saklar bernilai true
+                if ENABLE_AUTO_TELEPORT then
+                    -- Cek apakah file lokal dari host tersedia dan bisa dibaca
+                    if readfile and isfile and isfile(JOB_FILE_NAME) then
+                        local targetJobId = readfile(JOB_FILE_NAME)
+                        
+                        if targetJobId and targetJobId ~= "" and targetJobId ~= game.JobId and targetJobId ~= lastTarget then
+                            if string.len(targetJobId) == 36 and string.find(targetJobId, "-") then
+                                lastTarget = targetJobId
+                                print("[SLAVE] Mendeteksi JobID baru: " .. targetJobId .. ". Pindah sekarang!")
+                                task.wait(2)
+                                TeleportService:TeleportToPlaceInstance(PLACE_ID, targetJobId, LocalPlayer)
+                            end
                         end
                     end
                 end
