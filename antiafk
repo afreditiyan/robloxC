@@ -1,40 +1,53 @@
 -- =========================================================
--- MOBILE DELTA ANTI-AFK (SPECIAL FOR PHONE / TOUCHSCREEN)
+-- MOBILE DELTA ADVANCED ANTI-AFK (PET SIMULATOR 99)
 -- =========================================================
 
 local Players = game:GetService("Players")
 local VirtualUser = game:GetService("VirtualUser")
+local TeleportService = game:GetService("TeleportService")
+local CoreGui = game:GetService("CoreGui")
 local localPlayer = Players.LocalPlayer
 
--- 1. Tangkap event idle game supaya tidak ke-kick server
+-- 1. Tangkap event idle Roblox
 localPlayer.Idled:Connect(function()
     pcall(function()
         VirtualUser:CaptureController()
         VirtualUser:ClickButton2(Vector2.new(0, 0))
     end)
-    print("[Anti-AFK Mobile] Mencegah idle kick.")
+    print("[Anti-AFK PS99] Mencegah idle Roblox.")
 end)
 
--- 2. Simulasi tap/sentuh layar HP secara berkala tiap 1 menit
+-- 2. Simulasi gerakan tombol kecil (Melompat / Jump) secara berkala
+-- Ini trik ampuh agar PS99 tidak mengira lu AFK murni (karena karakter ikut gerak)
 task.spawn(function()
     while true do
-        -- Jeda waktu sekitar 55 sampai 65 detik
-        task.wait(math.random(55, 65))
+        -- Jeda acak setiap 35 sampai 45 detik
+        task.wait(math.random(35, 45))
         
         pcall(function()
-            local vu = game:GetService("VirtualUser")
+            local vim = game:GetService("VirtualInputManager")
             
-            -- Simulasi ketukan jari di layar HP (posisi random biar aman)
-            local randomX = math.random(100, 400)
-            local randomY = math.random(200, 500)
+            -- Simulasi menekan tombol Spasi (Loncat) sebentar lalu dilepas
+            vim:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+            task.wait(0.1)
+            vim:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
             
-            vu:Button1Down(Vector2.new(randomX, randomY))
-            task.wait(0.15)
-            vu:Button1Up(Vector2.new(randomX, randomY))
-            
-            print("[Anti-AFK Mobile] Sentuhan layar virtual dikirim.")
+            print("[Anti-AFK PS99] Karakter melompat untuk bypass deteksi AFK.")
         end)
     end
 end)
 
-print("[Anti-AFK Mobile] Berhasil aktif di Delta HP! Aman ditinggal.")
+-- 3. Auto Reconnect (Jaga-jaga kalau tetap kena disconnect/refresh server)
+task.spawn(function()
+    CoreGui.ChildAdded:Connect(function(child)
+        if child.Name == "ErrorPrompt" or child.Name == "RobloxPromptGui" then
+            task.wait(3)
+            print("[Auto Reconnect] Menyambungkan ulang ke server...")
+            pcall(function()
+                TeleportService:Teleport(game.PlaceId, localPlayer)
+            end)
+        end
+    end)
+end)
+
+print("[Anti-AFK PS99] Berhasil aktif dengan metode lompat otomatis!")
