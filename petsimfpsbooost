@@ -1,14 +1,15 @@
 -- =========================================================
--- ULTIMATE PET SIMULATOR 99 OPTIMIZER (NO CAMERA LOCK)
+-- ULTIMATE PET SIMULATOR 99 OPTIMIZER + CAMERA LOCK & ZOOM
 -- =========================================================
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local Camera = Workspace.CurrentCamera
 
-print("[FPS Booster] Mengaktifkan optimizer (tanpa ubah kamera)...")
+print("[FPS Booster] Mengaktifkan optimizer, kamera nunduk & zoom in...")
 
 -- 1. FITUR ANTI-AFK
 pcall(function()
@@ -19,7 +20,22 @@ pcall(function()
     end)
 end)
 
--- 2. MATIKAN ANIMASI & HAPUS KOIN/DIAMOND TERBANG
+-- 2. KUNCI KAMERA MENGHADAP KE BAWAH + ZOOM IN DEKAT KE KARAKTER
+pcall(function()
+    LocalPlayer.CameraMinZoomDistance = 0.5
+    LocalPlayer.CameraMaxZoomDistance = 0.5
+
+    RunService.RenderStepped:Connect(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            Camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 3, 0), hrp.Position - Vector3.new(0, 5, 0))
+        end
+    end)
+    print("[Camera Lock] Kamera terkunci nunduk & zoom in maksimal!")
+end)
+
+-- 3. MATIKAN ANIMASI & HAPUS KOIN/DIAMOND TERBANG
 pcall(function()
     local function disableCharAnimation(char)
         local humanoid = char:WaitForChild("Humanoid", 5)
@@ -51,7 +67,7 @@ pcall(function()
     if droppedItems then droppedItems.Parent = nil end
 end)
 
--- 3. MATIKAN GRAFIK BERAT & BAYANGAN
+-- 4. MATIKAN GRAFIK BERAT & BAYANGAN
 pcall(function()
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     game:GetService("Lighting").GlobalShadows = false
@@ -61,4 +77,4 @@ pcall(function()
     end
 end)
 
-print("[FPS Booster] Selesai! Game ringan & bebas diatur sesuka hati.")
+print("[FPS Booster] Selesai! Game ringan, kamera nunduk & zoom aktif.")
