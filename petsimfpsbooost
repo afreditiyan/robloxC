@@ -1,0 +1,80 @@
+-- =========================================================
+-- ULTIMATE PET SIMULATOR 99 OPTIMIZER + CAMERA LOCK & ZOOM
+-- =========================================================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local Camera = Workspace.CurrentCamera
+
+print("[FPS Booster] Mengaktifkan optimizer, kamera nunduk & zoom in...")
+
+-- 1. FITUR ANTI-AFK
+pcall(function()
+    LocalPlayer.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0,0), Camera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), Camera.CFrame)
+    end)
+end)
+
+-- 2. KUNCI KAMERA MENGHADAP KE BAWAH + ZOOM IN DEKAT KE KARAKTER
+pcall(function()
+    LocalPlayer.CameraMinZoomDistance = 0.5
+    LocalPlayer.CameraMaxZoomDistance = 0.5
+
+    RunService.RenderStepped:Connect(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            Camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 3, 0), hrp.Position - Vector3.new(0, 5, 0))
+        end
+    end)
+    print("[Camera Lock] Kamera terkunci nunduk & zoom in maksimal!")
+end)
+
+-- 3. MATIKAN ANIMASI & HAPUS KOIN/DIAMOND TERBANG
+pcall(function()
+    local function disableCharAnimation(char)
+        local humanoid = char:WaitForChild("Humanoid", 5)
+        if humanoid then
+            for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+        end
+    end
+    if LocalPlayer.Character then disableCharAnimation(LocalPlayer.Character) end
+    LocalPlayer.CharacterAdded:Connect(disableCharAnimation)
+end)
+
+local function destroyOrbs(item)
+    if not item then return end
+    pcall(function()
+        local name = item.Name:lower()
+        if name:find("coin") or name:find("diamond") or name:find("gem") or name:find("loot") or name:find("orb") or name:find("bag") then
+            item:Destroy()
+        end
+    end)
+end
+
+for _, v in ipairs(Workspace:GetDescendants()) do destroyOrbs(v) end
+Workspace.DescendantAdded:Connect(function(v) task.spawn(function() task.wait(0.05) destroyOrbs(v) end) end)
+
+pcall(function()
+    local droppedItems = Workspace:FindFirstChild("DroppedItems") or Workspace:FindFirstChild("ClientAnimations")
+    if droppedItems then droppedItems.Parent = nil end
+end)
+
+-- 4. MATIKAN GRAFIK BERAT & BAYANGAN
+pcall(function()
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    game:GetService("Lighting").GlobalShadows = false
+    game:GetService("Lighting").Brightness = 1
+    for _, v in ipairs(game:GetService("Lighting"):GetChildren()) do
+        if v:IsA("PostEffect") or v:IsA("Sky") or v:IsA("Atmosphere") then v.Enabled = false end
+    end
+end)
+
+print("[FPS Booster] Selesai! Game ringan, kamera nunduk & zoom aktif.")
