@@ -20,21 +20,6 @@ pcall(function()
     end)
 end)
 
--- 2. KUNCI KAMERA MENGHADAP KE BAWAH + ZOOM IN DEKAT KE KARAKTER
-pcall(function()
-    LocalPlayer.CameraMinZoomDistance = 0.5
-    LocalPlayer.CameraMaxZoomDistance = 0.5
-
-    RunService.RenderStepped:Connect(function()
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            Camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 3, 0), hrp.Position - Vector3.new(0, 5, 0))
-        end
-    end)
-    print("[Camera Lock] Kamera terkunci nunduk & zoom in maksimal!")
-end)
-
 -- 3. MATIKAN ANIMASI & HAPUS KOIN/DIAMOND TERBANG
 pcall(function()
     local function disableCharAnimation(char)
